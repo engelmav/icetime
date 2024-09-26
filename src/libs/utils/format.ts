@@ -1,4 +1,6 @@
 import moment from 'moment';
+import { IceTimeTypeEnum } from '@prisma/client';
+
 
 // Format: 2021-12-31T00:00:00
 export const formatDate = (date: string | Date) => {
@@ -29,3 +31,15 @@ export const formatDateFromNow = (date: string | Date) => {
 export const formatDateFull = (date: string | Date) => {
     return moment(date).format('MMMM Do YYYY, h:mm:ss a');
 };
+
+
+export function getReadableIceTimeType(type: IceTimeTypeEnum): string {
+  const mappings = {
+    [IceTimeTypeEnum.CLINIC]: "Clinic",
+    [IceTimeTypeEnum.OPEN_SKATE]: "Open Skate",
+    [IceTimeTypeEnum.STICK_TIME]: "Stick Time",
+    [IceTimeTypeEnum.OPEN_HOCKEY]: "Open Hockey",
+    [IceTimeTypeEnum.SUBSTITUTE_REQUEST]: "Substitute Request",
+  };
+  return mappings[type];
+}

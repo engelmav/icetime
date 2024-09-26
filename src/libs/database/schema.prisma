@@ -4,7 +4,7 @@ generator client {
 }
 
 datasource db {
-  provider  = "postgresql" // Replace with your database provider
+  provider  = "postgresql"
   url       = env("SUPABASE_DATABASE_URL")
   directUrl = env("SUPABASE_DIRECT_URL")
 }
@@ -103,4 +103,26 @@ model LsUserSubscription {
   User               User               @relation(fields: [userId], references: [id])
   planId             String
   SubscriptionPlan   LsSubscriptionPlan @relation(fields: [planId], references: [id])
+}
+
+// Ice Time slot
+model IceTime {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  type      IceTimeTypeEnum
+  date      DateTime
+  startTime String
+  endTime   String
+  rink      String
+  location  String
+}
+
+// Ice Time type enum
+enum IceTimeTypeEnum {
+  CLINIC              @map("Clinic")
+  OPEN_SKATE          @map("Open Skate")
+  STICK_TIME          @map("Stick Time")
+  OPEN_HOCKEY         @map("Open Hockey")
+  SUBSTITUTE_REQUEST  @map("Substitute Request")
 }

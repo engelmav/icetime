@@ -11,17 +11,20 @@ import {
 export default function Page() {
     return (
         <div className="flex flex-col">
+            
             <LandingPageHeader />
             <div className="-mt-8">
-                <LandingPageHero />
+                {/* <LandingPageHero /> */}
             </div>
             <div className="flex flex-col gap-[15vh]">
+                
                 <div className="bg-muted py-16">
+                
                     <LandingPageFeatures />
                 </div>
-                <LandingPagePricing />
+                {/* <LandingPagePricing /> */}
                 <div className="bg-muted py-16">
-                    <LandingPageFAQ />
+                    {/* <LandingPageFAQ /> */}
                 </div>
                 <LandingPageWaitlist />
                 <LandingPageFooter />

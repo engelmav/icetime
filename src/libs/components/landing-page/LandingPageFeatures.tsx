@@ -5,11 +5,13 @@ import { Badge } from '@/libs/ui/badge';
 import { Card, CardDescription, CardHeader, CardTitle } from '@/libs/ui/card';
 import { useState, useEffect } from 'react';
 import { getReadableIceTimeType } from '@/libs/utils';
+import { useMediaQuery } from '@/libs/hooks/useMediaQuery'
+import { Button } from '@/libs/ui/button';
+import { FilterDialog } from './FilterDialog';
 
 export function LandingPageFeatures() {
     const t = useI18n();
     const [filteredIceData, setFilteredIceData] = useState([]);
-    const [clinic, setClinic] = useState(false);
     const [openSkate, setOpenSkate] = useState(false);
     const [stickTime, setStickTime] = useState(false);
     const [openHockey, setOpenHockey] = useState(false);
@@ -18,11 +20,12 @@ export function LandingPageFeatures() {
     const [youthClinic, setYouthClinic] = useState(false);
     const [adultClinic, setAdultClinic] = useState(false);
     const [dateFilter, setDateFilter] = useState('today');
+    const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
+    const isMobile = useMediaQuery('(max-width: 640px)');
 
     useEffect(() => {
         async function fetchIceData() {
             const params = new URLSearchParams({
-                clinic: clinic.toString(),
                 openSkate: openSkate.toString(),
                 stickTime: stickTime.toString(),
                 openHockey: openHockey.toString(),
@@ -47,7 +50,7 @@ export function LandingPageFeatures() {
         }
 
         fetchIceData();
-    }, [clinic, openSkate, stickTime, openHockey, substituteRequest, learnToSkate, youthClinic, adultClinic, dateFilter]);
+    }, [openSkate, stickTime, openHockey, substituteRequest, learnToSkate, youthClinic, adultClinic, dateFilter]);
 
     const content = [
         {
@@ -76,6 +79,74 @@ export function LandingPageFeatures() {
         },
     ];
 
+    const FilterCheckboxes = () => (
+        <>
+            <label className="flex items-center">
+                <input
+                    type="checkbox"
+                    className="mr-2"
+                    checked={openSkate}
+                    onChange={(e) => setOpenSkate(e.target.checked)}
+                />
+                Open Skate
+            </label>
+            <label className="flex items-center">
+                <input
+                    type="checkbox"
+                    className="mr-2"
+                    checked={stickTime}
+                    onChange={(e) => setStickTime(e.target.checked)}
+                />
+                Stick Time
+            </label>
+            <label className="flex items-center">
+                <input
+                    type="checkbox"
+                    className="mr-2"
+                    checked={openHockey}
+                    onChange={(e) => setOpenHockey(e.target.checked)}
+                />
+                Open Hockey
+            </label>
+            <label className="flex items-center">
+                <input
+                    type="checkbox"
+                    className="mr-2"
+                    checked={substituteRequest}
+                    onChange={(e) => setSubstituteRequest(e.target.checked)}
+                />
+                Substitute Request
+            </label>
+            <label className="flex items-center">
+                <input
+                    type="checkbox"
+                    className="mr-2"
+                    checked={learnToSkate}
+                    onChange={(e) => setLearnToSkate(e.target.checked)}
+                />
+                Learn to Skate
+            </label>
+            <label className="flex items-center">
+                <input
+                    type="checkbox"
+                    className="mr-2"
+                    checked={youthClinic}
+                    onChange={(e) => setYouthClinic(e.target.checked)}
+                />
+                Youth Clinic
+            </label>
+            <label className="flex items-center">
+                <input
+                    type="checkbox"
+                    className="mr-2"
+                    checked={adultClinic}
+                    onChange={(e) => setAdultClinic(e.target.checked)}
+                />
+                Adult Clinic
+            </label>
+        </>
+    );
+
     return (
         <div
             id="landing-features"
@@ -101,104 +172,26 @@ export function LandingPageFeatures() {
                         </CardHeader>
                     </Card>
                 ))}
-                <div className="col-span-1">
-                    <label className="flex items-center">
-                        <input 
-                            type="checkbox" 
-                            className="mr-2" 
-                            checked={clinic}
-                            onChange={(e) => setClinic(e.target.checked)}
-                        />
-                        Clinic
-                    </label>
-                </div>
-                <div className="col-span-1">
-                    <label className="flex items-center">
-                        <input 
-                            type="checkbox" 
-                            className="mr-2" 
-                            checked={openSkate}
-                            onChange={(e) => setOpenSkate(e.target.checked)}
-                        />
-                        Open Skate
-                    </label>
-                </div>
-                <div className="col-span-1">
-                    <label className="flex items-center">
-                        <input 
-                            type="checkbox" 
-                            className="mr-2" 
-                            checked={stickTime}
-                            onChange={(e) => setStickTime(e.target.checked)}
-                        />
-                        Stick Time
-                    </label>
-                </div>
-                <div className="col-span-1">
-                    <label className="flex items-center">
-                        <input 
-                            type="checkbox" 
-                            className="mr-2" 
-                            checked={openHockey}
-                            onChange={(e) => setOpenHockey(e.target.checked)}
-                        />
-                        Open Hockey
-                    </label>
-                </div>
-                <div className="col-span-1">
-                    <label className="flex items-center">
-                        <input 
-                            type="checkbox" 
-                            className="mr-2" 
-                            checked={substituteRequest}
-                            onChange={(e) => setSubstituteRequest(e.target.checked)}
-                        />
-                        Substitute Request
-                    </label>
-                </div>
-                <div className="col-span-1">
-                    <label className="flex items-center">
-                        <input 
-                            type="checkbox" 
-                            className="mr-2" 
-                            checked={learnToSkate}
-                            onChange={(e) => setLearnToSkate(e.target.checked)}
-                        />
-                        Learn to Skate
-                    </label>
-                </div>
-                <div className="col-span-1">
-                    <label className="flex items-center">
-                        <input 
-                            type="checkbox" 
-                            className="mr-2" 
-                            checked={youthClinic}
-                            onChange={(e) => setYouthClinic(e.target.checked)}
-                        />
-                        Youth Clinic
-                    </label>
-                </div>
-                <div className="col-span-1">
-                    <label className="flex items-center">
-                        <input 
-                            type="checkbox" 
-                            className="mr-2" 
-                            checked={adultClinic}
-                            onChange={(e) => setAdultClinic(e.target.checked)}
-                        />
-                        Adult Clinic
-                    </label>
-                </div>
-                <div className="col-span-3 mb-4">
-                    <div className="flex space-x-4">
+            </div>
+            <div className="w-full flex flex-col items-center sm:block">
+                <div className="w-full sm:col-span-full mb-4">
+                    <div className="flex flex-wrap justify-center gap-4">
                         <button
-                            className={`px-4 py-2 rounded ${dateFilter === 'today' ? 'bg-primary text-white' : 'bg-secondary'}`}
+                            className={`px-4 py-2 rounded ${
+                                dateFilter === 'today' 
+                                ? 'bg-primary text-primary-foreground' 
+                                : 'bg-secondary text-secondary-foreground'
+                            }`}
                             onClick={() => setDateFilter('today')}
                         >
                             Today
                         </button>
                         <button
-                            className={`px-4 py-2 rounded ${dateFilter === 'tomorrow' ? 'bg-primary text-white' : 'bg-secondary'}`}
+                            className={`px-4 py-2 rounded ${
+                                dateFilter === 'tomorrow' 
+                                ? 'bg-primary text-primary-foreground' 
+                                : 'bg-secondary text-secondary-foreground'
+                            }`}
                             onClick={() => setDateFilter('tomorrow')}
                         >
                             Tomorrow
@@ -223,34 +216,67 @@ export function LandingPageFeatures() {
                         </button>
                     </div>
                 </div>
-                <div className="col-span-3">
-                    {filteredIceData.length > 0 ? (
-                        <>
-                            <div className="grid grid-cols-5 gap-4 font-bold mb-2">
-                                <div>Ice Type</div>
-                                <div>Date</div>
-                                <div>Time</div>
-                                <div>Rink</div>
-                                <div>Location</div>
-                            </div>
-                            {filteredIceData.map((item, index) => (
-                                <div key={index} className="grid grid-cols-5 gap-4 py-2 border-b">
-                                    <div>{getReadableIceTimeType(item.iceType)}</div>
-                                    <div>{item.date}</div>
-                                    <div>{item.time}</div>
-                                    <div>{item.rink}</div>
-                                    <div>{item.location}</div>
-                                </div>
-                            ))}
-                        </>
+                <div className="w-full sm:col-span-full mb-4">
+                    {isMobile ? (
+                        <Button
+                            className="w-full sm:w-auto px-4 py-2 rounded bg-primary text-primary-foreground"
+                            onClick={() => setIsFilterModalOpen(true)}
+                        >
+                            Filter by...
+                        </Button>
                     ) : (
-                        <div className="text-center p-8 bg-muted rounded-lg w-full">
-                            <p className="text-lg text-muted-foreground">
-                                No ice time available with the selected filters. Please try different options.
-                            </p>
+                        <div className="flex flex-wrap justify-center gap-4 mb-4">
+                            <FilterCheckboxes />
                         </div>
                     )}
                 </div>
+            </div>
+            <FilterDialog
+                isOpen={isFilterModalOpen}
+                onOpenChange={setIsFilterModalOpen}
+                FilterCheckboxes={FilterCheckboxes}
+            />
+            <div className="col-span-3">
+                {filteredIceData.length > 0 ? (
+                    <>
+                        <div className="grid grid-cols-5 gap-4 font-bold mb-2">
+                            <div>Ice Type</div>
+                            <div>Date</div>
+                            <div>Time</div>
+                            <div>Rink</div>
+                            <div>Location</div>
+                        </div>
+                        {filteredIceData.map((item, index) => (
+                            <div key={index} className="grid grid-cols-5 gap-4 py-2 border-b">
+                                <div>{getReadableIceTimeType(item.iceType)}</div>
+                                <div>{item.date}</div>
+                                <div>{item.time}</div>
+                                <div>
+                                    {item.website ? (
+                                        <a href={item.website} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
+                                            {item.rink}
+                                        </a>
+                                    ) : (
+                                        item.rink
+                                    )}
+                                    {/* Debug info */}
+                                    <span className="text-xs text-gray-500 block">
+                                        {item.website ? 'Sign up on website' : 'No website'}
+
+                                    </span>
+                                </div>
+                                <div>{item.location}</div>
+                            </div>
+                        ))}
+
+                    </>
+                ) : (
+                    <div className="text-center p-8 bg-muted rounded-lg w-full">
+                        <p className="text-lg text-muted-foreground">
+                            No ice time available with the selected filters. Please try different options.
+                        </p>
+                    </div>
+                )}
             </div>
         </div>
     );

@@ -91,6 +91,7 @@ export async function GET(req: NextApiRequest, res: NextApiResponse) {
           select: {
             name: true,
             location: true,
+            website: true,
           }
         },
       },
@@ -106,6 +107,7 @@ export async function GET(req: NextApiRequest, res: NextApiResponse) {
       date: format(item.date, 'MMM. dd'),
       time: `${formatTime(item.startTime)} - ${formatTime(item.endTime)}`,
       rink: item.rink.name,
+      website: item.rink.website,
       location: item.rink.location,
     }));
 

@@ -14,6 +14,7 @@ export function LandingPageFeatures() {
     const [stickTime, setStickTime] = useState(false);
     const [openHockey, setOpenHockey] = useState(false);
     const [substituteRequest, setSubstituteRequest] = useState(false);
+    const [dateFilter, setDateFilter] = useState('today');
 
     useEffect(() => {
         async function fetchIceData() {
@@ -23,6 +24,7 @@ export function LandingPageFeatures() {
                 stickTime: stickTime.toString(),
                 openHockey: openHockey.toString(),
                 substituteRequest: substituteRequest.toString(),
+                dateFilter: dateFilter,
             });
 
             try {
@@ -39,7 +41,7 @@ export function LandingPageFeatures() {
         }
 
         fetchIceData();
-    }, [clinic, openSkate, stickTime, openHockey, substituteRequest]);
+    }, [clinic, openSkate, stickTime, openHockey, substituteRequest, dateFilter]);
 
     const content = [
         {
@@ -148,23 +150,67 @@ export function LandingPageFeatures() {
                         Substitute Request
                     </label>
                 </div>
-                <div className="col-span-3">
-                    <div className="grid grid-cols-5 gap-4 font-bold mb-2">
-                        <div>Ice Type</div>
-                        <div>Date</div>
-                        <div>Time</div>
-                        <div>Rink</div>
-                        <div>Location</div>
+                <div className="col-span-3 mb-4">
+                    <div className="flex space-x-4">
+                        <button
+                            className={`px-4 py-2 rounded ${dateFilter === 'today' ? 'bg-primary text-white' : 'bg-secondary'}`}
+                            onClick={() => setDateFilter('today')}
+                        >
+                            Today
+                        </button>
+                        <button
+                            className={`px-4 py-2 rounded ${dateFilter === 'tomorrow' ? 'bg-primary text-white' : 'bg-secondary'}`}
+                            onClick={() => setDateFilter('tomorrow')}
+                        >
+                            Tomorrow
+                        </button>
+                        <button
+                            className={`px-4 py-2 rounded ${dateFilter === 'next7days' ? 'bg-primary text-white' : 'bg-secondary'}`}
+                            onClick={() => setDateFilter('next7days')}
+                        >
+                            Next 7 days
+                        </button>
+                        <button
+                            className={`px-4 py-2 rounded ${dateFilter === 'next14days' ? 'bg-primary text-white' : 'bg-secondary'}`}
+                            onClick={() => setDateFilter('next14days')}
+                        >
+                            Next 14 days
+                        </button>
+                        <button
+                            className={`px-4 py-2 rounded ${dateFilter === 'nextmonth' ? 'bg-primary text-white' : 'bg-secondary'}`}
+                            onClick={() => setDateFilter('nextmonth')}
+                        >
+                            Next month
+                        </button>
                     </div>
-                    {filteredIceData.map((item, index) => (
-                        <div key={index} className="grid grid-cols-5 gap-4 py-2 border-b">
-                            <div>{getReadableIceTimeType(item.iceType)}</div>
-                            <div>{item.date}</div>
-                            <div>{item.time}</div>
-                            <div>{item.rink}</div>
-                            <div>{item.location}</div>
+                </div>
+                <div className="col-span-3">
+                    {filteredIceData.length > 0 ? (
+                        <>
+                            <div className="grid grid-cols-5 gap-4 font-bold mb-2">
+                                <div>Ice Type</div>
+                                <div>Date</div>
+                                <div>Time</div>
+                                <div>Rink</div>
+                                <div>Location</div>
+                            </div>
+                            {filteredIceData.map((item, index) => (
+                                <div key={index} className="grid grid-cols-5 gap-4 py-2 border-b">
+                                    <div>{getReadableIceTimeType(item.iceType)}</div>
+                                    <div>{item.date}</div>
+                                    <div>{item.time}</div>
+                                    <div>{item.rink}</div>
+                                    <div>{item.location}</div>
+                                </div>
+                            ))}
+                        </>
+                    ) : (
+                        <div className="text-center p-8 bg-muted rounded-lg w-full">
+                            <p className="text-lg text-muted-foreground">
+                                No ice time available with the selected filters. Please try different options.
+                            </p>
                         </div>
-                    ))}
+                    )}
                 </div>
             </div>
         </div>

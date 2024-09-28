@@ -114,8 +114,19 @@ model IceTime {
   date      DateTime
   startTime String
   endTime   String
-  rink      String
+  rinkId    String
+  rink      Rink     @relation(fields: [rinkId], references: [id])
+}
+
+// New Rink model
+model Rink {
+  id        String    @id @default(cuid())
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  name      String    @unique
+  website   String?
   location  String
+  iceTimes  IceTime[]
 }
 
 // Ice Time type enum

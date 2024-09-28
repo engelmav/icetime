@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/libs/database';
 import { IceTimeTypeEnum } from '@prisma/client';
-import xml2js from 'xml2js';
-import * as cheerio from 'cheerio';
 import puppeteer from 'puppeteer';
 
 const BROWSER_TIMEOUT = 1000 * 60 * 60; // 1 hour in milliseconds
@@ -42,10 +40,12 @@ async function nj_unionSportsArena() {
 
   // Map programName to IceTimeTypeEnum
   const programTypeMap: { [key: string]: IceTimeTypeEnum } = {
-    "Learn To Skate": IceTimeTypeEnum.CLINIC,
+    "Learn To Skate": IceTimeTypeEnum.LEARN_TO_SKATE,
     "Public Skate": IceTimeTypeEnum.OPEN_SKATE,
     "Adult Open Hockey": IceTimeTypeEnum.OPEN_HOCKEY,
     "Freestyle": IceTimeTypeEnum.STICK_TIME,
+    "Youth Clinic": IceTimeTypeEnum.YOUTH_CLINIC,
+    "Adult Clinic": IceTimeTypeEnum.ADULT_CLINIC,
     // Add more mappings as needed
   };
 

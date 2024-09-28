@@ -14,6 +14,9 @@ export function LandingPageFeatures() {
     const [stickTime, setStickTime] = useState(false);
     const [openHockey, setOpenHockey] = useState(false);
     const [substituteRequest, setSubstituteRequest] = useState(false);
+    const [learnToSkate, setLearnToSkate] = useState(false);
+    const [youthClinic, setYouthClinic] = useState(false);
+    const [adultClinic, setAdultClinic] = useState(false);
     const [dateFilter, setDateFilter] = useState('today');
 
     useEffect(() => {
@@ -24,6 +27,9 @@ export function LandingPageFeatures() {
                 stickTime: stickTime.toString(),
                 openHockey: openHockey.toString(),
                 substituteRequest: substituteRequest.toString(),
+                learnToSkate: learnToSkate.toString(),
+                youthClinic: youthClinic.toString(),
+                adultClinic: adultClinic.toString(),
                 dateFilter: dateFilter,
             });
 
@@ -41,7 +47,7 @@ export function LandingPageFeatures() {
         }
 
         fetchIceData();
-    }, [clinic, openSkate, stickTime, openHockey, substituteRequest, dateFilter]);
+    }, [clinic, openSkate, stickTime, openHockey, substituteRequest, learnToSkate, youthClinic, adultClinic, dateFilter]);
 
     const content = [
         {
@@ -148,6 +154,39 @@ export function LandingPageFeatures() {
                             onChange={(e) => setSubstituteRequest(e.target.checked)}
                         />
                         Substitute Request
+                    </label>
+                </div>
+                <div className="col-span-1">
+                    <label className="flex items-center">
+                        <input 
+                            type="checkbox" 
+                            className="mr-2" 
+                            checked={learnToSkate}
+                            onChange={(e) => setLearnToSkate(e.target.checked)}
+                        />
+                        Learn to Skate
+                    </label>
+                </div>
+                <div className="col-span-1">
+                    <label className="flex items-center">
+                        <input 
+                            type="checkbox" 
+                            className="mr-2" 
+                            checked={youthClinic}
+                            onChange={(e) => setYouthClinic(e.target.checked)}
+                        />
+                        Youth Clinic
+                    </label>
+                </div>
+                <div className="col-span-1">
+                    <label className="flex items-center">
+                        <input 
+                            type="checkbox" 
+                            className="mr-2" 
+                            checked={adultClinic}
+                            onChange={(e) => setAdultClinic(e.target.checked)}
+                        />
+                        Adult Clinic
                     </label>
                 </div>
                 <div className="col-span-3 mb-4">

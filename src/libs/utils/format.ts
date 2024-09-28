@@ -40,6 +40,9 @@ export function getReadableIceTimeType(type: IceTimeTypeEnum): string {
     [IceTimeTypeEnum.STICK_TIME]: "Stick Time",
     [IceTimeTypeEnum.OPEN_HOCKEY]: "Open Hockey",
     [IceTimeTypeEnum.SUBSTITUTE_REQUEST]: "Substitute Request",
+    [IceTimeTypeEnum.LEARN_TO_SKATE]: "Learn to Skate",
+    [IceTimeTypeEnum.YOUTH_CLINIC]: "Youth Clinic",
+    [IceTimeTypeEnum.ADULT_CLINIC]: "Adult Clinic",
   };
   return mappings[type];
 }

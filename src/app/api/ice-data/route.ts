@@ -18,6 +18,9 @@ export async function GET(req: NextApiRequest, res: NextApiResponse) {
   const stickTime = searchParams.get('stickTime');
   const openHockey = searchParams.get('openHockey');
   const substituteRequest = searchParams.get('substituteRequest');
+  const learnToSkate = searchParams.get('learnToSkate');
+  const youthClinic = searchParams.get('youthClinic');
+  const adultClinic = searchParams.get('adultClinic');
   const dateFilter = searchParams.get('dateFilter');
 
   const types = [];
@@ -26,6 +29,9 @@ export async function GET(req: NextApiRequest, res: NextApiResponse) {
   if (stickTime === 'true') types.push('STICK_TIME');
   if (openHockey === 'true') types.push('OPEN_HOCKEY');
   if (substituteRequest === 'true') types.push('SUBSTITUTE_REQUEST');
+  if (learnToSkate === 'true') types.push('LEARN_TO_SKATE');
+  if (youthClinic === 'true') types.push('YOUTH_CLINIC');
+  if (adultClinic === 'true') types.push('ADULT_CLINIC');
 
   const now = new Date();
   let dateRange = {};

@@ -136,4 +136,7 @@ enum IceTimeTypeEnum {
   STICK_TIME          @map("Stick Time")
   OPEN_HOCKEY         @map("Open Hockey")
   SUBSTITUTE_REQUEST  @map("Substitute Request")
+  LEARN_TO_SKATE      @map("Learn to Skate")
+  YOUTH_CLINIC        @map("Youth Clinic")
+  ADULT_CLINIC        @map("Adult Clinic")
 }

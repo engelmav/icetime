@@ -252,12 +252,12 @@ export default {
             ],
         },
         waitlist: {
-            title: 'Get Early Access',
+            title: 'Subscribe to filter',
             description:
-                'Join our waitlist to get notified when we launch new features. We will never spam you.',
+                'Get notified to changes.',
             form: {
                 email: 'Email Address',
-                join_waitlist: 'Join Waitlist',
+                join_waitlist: 'Subscribe',
             },
         },
         nav: {

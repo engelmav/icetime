@@ -116,6 +116,7 @@ model IceTime {
   endTime   String
   rinkId    String
   rink      Rink     @relation(fields: [rinkId], references: [id])
+  deleted   Boolean  @default(false)
 }
 
 // New Rink model

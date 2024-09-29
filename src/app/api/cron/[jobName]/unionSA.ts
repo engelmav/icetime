@@ -25,9 +25,29 @@ export async function nj_unionSportsArena() {
     // Add more mappings as needed
   };
 
+  // Soft delete existing records for this rink
+  const rink = await prisma.rink.findUnique({
+    where: { name: "Union Sports Arena" },
+  });
+
+  if (!rink) {
+    throw new Error("Rink not found");
+  }
+
+  await prisma.iceTime.updateMany({
+    where: {
+      rinkId: rink.id,
+      deleted: false,
+    },
+    data: {
+      deleted: true,
+    },
+  });
+  console.log("Existing records soft-deleted");
+
   // Process and save the data
   for (const event of data.data) {
-    const iceTimeType = programTypeMap[event.programName] || IceTimeTypeEnum.OPEN_SKATE; // Default to OPEN_SKATE if not found
+    const iceTimeType = programTypeMap[event.programName] || IceTimeTypeEnum.OPEN_SKATE;
 
     await prisma.iceTime.create({
       data: {
@@ -35,8 +55,8 @@ export async function nj_unionSportsArena() {
         date: new Date(event.eventStartDate),
         startTime: event.eventStartTime,
         endTime: event.eventEndTime,
-        rink: "Union Sports Arena",
-        location: "Union Sports Arena, NJ",
+        rinkId: rink.id,
+        deleted: false,
       },
     });
   }

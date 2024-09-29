@@ -62,14 +62,34 @@ export async function bridgewaterIceArena() {
 
     console.log(`Found ${events.length} events`);
 
+    // Soft delete existing records for this rink
+    const rink = await prisma.rink.findUnique({
+      where: { name: "Bridgewater Ice Arena" },
+    });
+
+    if (!rink) {
+      throw new Error("Rink not found");
+    }
+
+    await prisma.iceTime.updateMany({
+      where: {
+        rinkId: rink.id,
+        deleted: false,
+      },
+      data: {
+        deleted: true,
+      },
+    });
+    console.log("Existing records soft-deleted");
+
     // Map the events to IceTime format and persist to database
     const iceTimeEvents = events.map(event => ({
       type: mapEventTypeToEnum(event.title),
       date: new Date(event.date),
       startTime: event.startTime,
       endTime: event.endTime,
-      rink: "Bridgewater Ice Arena",
-      location: "Bridgewater Ice Arena, NJ",
+      rinkId: rink.id,
+      deleted: false,
     }));
 
     // Persist events to database

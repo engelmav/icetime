@@ -14,7 +14,7 @@ export async function POST(req: NextRequest) {
         const bridgewaterResult = await bridgewaterIceArena()
         return NextResponse.json(bridgewaterResult)
       default:
-        return NextResponse.json({ error: 'Job not found' }, { status: 404 })
+        return NextResponse.json({ error: `Job not found: ${jobName}` }, { status: 404 })
     }
   } catch (error) {
     console.error('Error executing cron job:', error);

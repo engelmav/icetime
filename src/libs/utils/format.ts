@@ -34,7 +34,7 @@ export const formatDateFull = (date: string | Date) => {
 
 
 export function getReadableIceTimeType(type: IceTimeTypeEnum): string {
-  const mappings = {
+  const mappings: Record<IceTimeTypeEnum, string> = {
     [IceTimeTypeEnum.CLINIC]: "Clinic",
     [IceTimeTypeEnum.OPEN_SKATE]: "Open Skate",
     [IceTimeTypeEnum.STICK_TIME]: "Stick Time",
@@ -43,6 +43,7 @@ export function getReadableIceTimeType(type: IceTimeTypeEnum): string {
     [IceTimeTypeEnum.LEARN_TO_SKATE]: "Learn to Skate",
     [IceTimeTypeEnum.YOUTH_CLINIC]: "Youth Clinic",
     [IceTimeTypeEnum.ADULT_CLINIC]: "Adult Clinic",
+    [IceTimeTypeEnum.OTHER]: "Other" // Add this line
   };
-  return mappings[type];
+  return mappings[type] || "Unknown"; // Fallback to "Unknown" if type is not in mappings
 }

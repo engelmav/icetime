@@ -1,77 +1,52 @@
-import { PrismaClient } from '@prisma/client';
-import type { NextApiRequest, NextApiResponse } from 'next';
 import { NextResponse } from 'next/server';
-import { addDays, addMonths, startOfDay, endOfDay, format } from 'date-fns';
+import { prisma } from '@/libs/database';
+import { IceTimeTypeEnum } from '@prisma/client';
 
-const prisma = new PrismaClient();
-
-export async function GET(req: NextApiRequest, res: NextApiResponse) {
-  const url = new URL(req.url || '');
-  const searchParams = url.searchParams;
+export async function GET(request: Request) {
+  const { searchParams } = new URL(request.url);
 
   if (searchParams.toString() === '') {
     return NextResponse.json({ error: 'Malformed request: No GET parameters' }, { status: 400 });
   }
 
-  const clinic = searchParams.get('clinic');
-  const openSkate = searchParams.get('openSkate');
-  const stickTime = searchParams.get('stickTime');
-  const openHockey = searchParams.get('openHockey');
-  const substituteRequest = searchParams.get('substituteRequest');
-  const learnToSkate = searchParams.get('learnToSkate');
-  const youthClinic = searchParams.get('youthClinic');
-  const adultClinic = searchParams.get('adultClinic');
+  const clinic = searchParams.get('clinic') === 'true';
+  const openSkate = searchParams.get('openSkate') === 'true';
+  const stickTime = searchParams.get('stickTime') === 'true';
+  const openHockey = searchParams.get('openHockey') === 'true';
+  const substituteRequest = searchParams.get('substituteRequest') === 'true';
+  const learnToSkate = searchParams.get('learnToSkate') === 'true';
+  const youthClinic = searchParams.get('youthClinic') === 'true';
+  const adultClinic = searchParams.get('adultClinic') === 'true';
   const dateFilter = searchParams.get('dateFilter');
 
-  const types = [];
-  if (clinic === 'true') types.push('CLINIC');
-  if (openSkate === 'true') types.push('OPEN_SKATE');
-  if (stickTime === 'true') types.push('STICK_TIME');
-  if (openHockey === 'true') types.push('OPEN_HOCKEY');
-  if (substituteRequest === 'true') types.push('SUBSTITUTE_REQUEST');
-  if (learnToSkate === 'true') types.push('LEARN_TO_SKATE');
-  if (youthClinic === 'true') types.push('YOUTH_CLINIC');
-  if (adultClinic === 'true') types.push('ADULT_CLINIC');
+  const types: IceTimeTypeEnum[] = [];
+  if (clinic) types.push(IceTimeTypeEnum.CLINIC);
+  if (openSkate) types.push(IceTimeTypeEnum.OPEN_SKATE);
+  if (stickTime) types.push(IceTimeTypeEnum.STICK_TIME);
+  if (openHockey) types.push(IceTimeTypeEnum.OPEN_HOCKEY);
+  if (substituteRequest) types.push(IceTimeTypeEnum.SUBSTITUTE_REQUEST);
+  if (learnToSkate) types.push(IceTimeTypeEnum.LEARN_TO_SKATE);
+  if (youthClinic) types.push(IceTimeTypeEnum.YOUTH_CLINIC);
+  if (adultClinic) types.push(IceTimeTypeEnum.ADULT_CLINIC);
 
-  const now = new Date();
-  let dateRange = {};
+  let dateRange: { gte?: Date; lte?: Date } = {};
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
 
   switch (dateFilter) {
     case 'today':
-      dateRange = {
-        gte: startOfDay(now),
-        lte: endOfDay(now),
-      };
+      dateRange = { gte: today, lte: new Date(today.getTime() + 24 * 60 * 60 * 1000) };
       break;
     case 'tomorrow':
-      const tomorrow = addDays(now, 1);
-      dateRange = {
-        gte: startOfDay(tomorrow),
-        lte: endOfDay(tomorrow),
-      };
+      const tomorrow = new Date(today.getTime() + 24 * 60 * 60 * 1000);
+      dateRange = { gte: tomorrow, lte: new Date(tomorrow.getTime() + 24 * 60 * 60 * 1000) };
       break;
-    case 'next7days':
-      dateRange = {
-        gte: startOfDay(now),
-        lte: endOfDay(addDays(now, 7)),
-      };
-      break;
-    case 'next14days':
-      dateRange = {
-        gte: startOfDay(now),
-        lte: endOfDay(addDays(now, 14)),
-      };
-      break;
-    case 'nextmonth':
-      dateRange = {
-        gte: startOfDay(now),
-        lte: endOfDay(addMonths(now, 1)),
-      };
+    case 'thisWeek':
+      const endOfWeek = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000);
+      dateRange = { gte: today, lte: endOfWeek };
       break;
     default:
-      dateRange = {
-        gte: startOfDay(now),
-      };
+      dateRange = { gte: today };
   }
 
   try {
@@ -81,7 +56,7 @@ export async function GET(req: NextApiRequest, res: NextApiResponse) {
           in: types.length > 0 ? types : undefined,
         },
         date: dateRange,
-        deleted: false, // Add this line to filter out soft-deleted records
+        deleted: false,
       },
       select: {
         type: true,
@@ -103,23 +78,9 @@ export async function GET(req: NextApiRequest, res: NextApiResponse) {
       ],
     });
 
-    const formattedIceData = iceData.map(item => ({
-      iceType: item.type,
-      date: format(item.date, 'MMM. dd'),
-      time: `${formatTime(item.startTime)} - ${formatTime(item.endTime)}`,
-      rink: item.rink.name,
-      website: item.rink.website,
-      location: item.rink.location,
-    }));
-
-    return NextResponse.json(formattedIceData);
+    return NextResponse.json(iceData);
   } catch (error) {
     console.error('Error fetching ice data:', error);
-    return NextResponse.json({ error: 'Failed to fetch ice data' }, { status: 500 });
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
-}
-
-function formatTime(time: string): string {
-  const [hours, minutes] = time.split(':');
-  return format(new Date(0, 0, 0, parseInt(hours), parseInt(minutes)), 'h:mm a');
 }

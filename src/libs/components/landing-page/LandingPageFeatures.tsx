@@ -8,10 +8,24 @@ import { getReadableIceTimeType } from '@/libs/utils';
 import { useMediaQuery } from '@/libs/hooks/useMediaQuery'
 import { Button } from '@/libs/ui/button';
 import { FilterDialog } from './FilterDialog';
+import { IceTimeTypeEnum } from '@prisma/client';
+import { formatDate } from '@/libs/utils/format';
+
+interface IceDataItem {
+  type: IceTimeTypeEnum;
+  date: string;
+  startTime: string;
+  endTime: string;
+  rink: {
+    name: string;
+    location: string;
+    website: string | null;
+  };
+}
 
 export function LandingPageFeatures() {
     const t = useI18n();
-    const [filteredIceData, setFilteredIceData] = useState([]);
+    const [filteredIceData, setFilteredIceData] = useState<IceDataItem[]>([]);
     const [openSkate, setOpenSkate] = useState(false);
     const [stickTime, setStickTime] = useState(false);
     const [openHockey, setOpenHockey] = useState(false);
@@ -41,7 +55,7 @@ export function LandingPageFeatures() {
                 if (!response.ok) {
                     throw new Error('Failed to fetch ice data');
                 }
-                const data = await response.json();
+                const data: IceDataItem[] = await response.json();
                 setFilteredIceData(data);
             } catch (error) {
                 console.error('Error fetching ice data:', error);
@@ -248,24 +262,15 @@ export function LandingPageFeatures() {
                         </div>
                         {filteredIceData.map((item, index) => (
                             <div key={index} className="grid grid-cols-5 gap-4 py-2 border-b">
-                                <div>{getReadableIceTimeType(item.iceType)}</div>
-                                <div>{item.date}</div>
-                                <div>{item.time}</div>
+                                <div>{getReadableIceTimeType(item.type)}</div>
+                                <div>{formatDate(new Date(item.date))}</div>
+                                <div>{`${item.startTime} - ${item.endTime}`}</div>
                                 <div>
-                                    {item.website ? (
-                                        <a href={item.website} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
-                                            {item.rink}
-                                        </a>
-                                    ) : (
-                                        item.rink
-                                    )}
-                                    {/* Debug info */}
-                                    <span className="text-xs text-gray-500 block">
-                                        {item.website ? 'Sign up on website' : 'No website'}
-
-                                    </span>
+                                    <a href={item.rink.website || '#'} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">
+                                        {item.rink.name}
+                                    </a>
                                 </div>
-                                <div>{item.location}</div>
+                                <div>{item.rink.location}</div>
                             </div>
                         ))}
 

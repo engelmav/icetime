@@ -38,8 +38,15 @@ export async function bridgewaterIceArena() {
       return Array.from(eventElements).map((element, index) => {
         const title = element.querySelector('.summary a')?.textContent?.trim() || '';
         const dateElement = index % 2 === 0 ? element : element.previousElementSibling;
-        const month = dateElement.querySelector('.month')?.textContent?.trim() || '';
-        const day = dateElement.querySelector('.date')?.textContent?.trim() || '';
+        
+        let month = '';
+        let day = '';
+        
+        if (dateElement) {
+          month = dateElement.querySelector('.month')?.textContent?.trim() || '';
+          day = dateElement.querySelector('.date')?.textContent?.trim() || '';
+        }
+        
         const year = new Date().getFullYear();
         
         const startTime = element.querySelector('.dtstart[title]')?.getAttribute('title') || '';

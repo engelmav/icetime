@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { bridgewaterIceArena } from './bridgewaterSA';
 import { nj_unionSportsArena } from './unionSA';
+import { mennenSportsArena } from './mennenSA';
 
 export async function POST(req: NextRequest) {
   const url = new URL(req.url)
@@ -13,6 +14,9 @@ export async function POST(req: NextRequest) {
       case 'bridgewater-ice-arena':
         const bridgewaterResult = await bridgewaterIceArena()
         return NextResponse.json(bridgewaterResult)
+      case 'mennen-sports-arena':
+        const mennenResult = await mennenSportsArena()
+        return NextResponse.json(mennenResult)
       default:
         return NextResponse.json({ error: `Job not found: ${jobName}` }, { status: 404 })
     }

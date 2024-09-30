@@ -39,7 +39,7 @@ export function LandingPageHeader() {
                                 className="h-6 w-6 rounded-sm"
                                 alt="favicon"
                             />
-                            <span className="">SaasterKit</span>
+                            <span className="">IceTime</span>
                         </Link>
                         <a
                             href="#landing-features"
@@ -79,7 +79,7 @@ export function LandingPageHeader() {
                     className="flex items-center gap-2 font-semibold text-base"
                 >
                     <img src="/favicon.ico" className="h-6 w-6 rounded-sm" alt="favicon" />
-                    <span className="">SaasterKit</span>
+                    <span className="">IceTime</span>
                 </Link>
                 <a
                     href="#landing-features"

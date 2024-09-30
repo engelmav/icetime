@@ -85,6 +85,7 @@ export async function bridgewaterIceArena() {
     // Map the events to IceTime format and persist to database
     const iceTimeEvents = events.map(event => ({
       type: mapEventTypeToEnum(event.title),
+      originalIceType: event.title,
       date: new Date(event.date),
       startTime: event.startTime,
       endTime: event.endTime,
@@ -118,11 +119,20 @@ export async function bridgewaterIceArena() {
 
 // Helper function to map event titles to IceTimeTypeEnum
 function mapEventTypeToEnum(title: string): IceTimeTypeEnum {
-  if (title.toLowerCase().includes('public skate')) {
+  const lowerTitle = title.toLowerCase();
+  if (lowerTitle.includes('public skate')) {
     return IceTimeTypeEnum.OPEN_SKATE;
-  } else if (title.toLowerCase().includes('stick time')) {
+  } else if (lowerTitle.includes('stick time')) {
     return IceTimeTypeEnum.STICK_TIME;
+  } else if (lowerTitle.includes('learn to skate')) {
+    return IceTimeTypeEnum.LEARN_TO_SKATE;
+  } else if (lowerTitle.includes('youth clinic')) {
+    return IceTimeTypeEnum.YOUTH_CLINIC;
+  } else if (lowerTitle.includes('adult clinic')) {
+    return IceTimeTypeEnum.ADULT_CLINIC;
+  } else if (lowerTitle.includes('open hockey')) {
+    return IceTimeTypeEnum.OPEN_HOCKEY;
   }
   // Add more mappings as needed
-  return IceTimeTypeEnum.OPEN_SKATE; // Default case
+  return IceTimeTypeEnum.OTHER;
 }

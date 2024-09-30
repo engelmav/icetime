@@ -23,7 +23,7 @@ const lato = Lato({
 
 // Metadata for the app
 export const metadata: Metadata = {
-    title: 'SaasterKit',
+    title: 'IceTime',
     description: 'A Next.js Boilerplate Kit for SaaS apps',
     keywords: [
         'nextjs',

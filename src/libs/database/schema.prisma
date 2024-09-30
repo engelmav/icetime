@@ -107,16 +107,17 @@ model LsUserSubscription {
 
 // Ice Time slot
 model IceTime {
-  id        String   @id @default(cuid())
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  type      IceTimeTypeEnum
-  date      DateTime
-  startTime String
-  endTime   String
-  rinkId    String
-  rink      Rink     @relation(fields: [rinkId], references: [id])
-  deleted   Boolean  @default(false)
+  id              String   @id @default(cuid())
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  type            IceTimeTypeEnum
+  originalIceType String?
+  date            DateTime
+  startTime       String
+  endTime         String
+  rinkId          String
+  rink            Rink     @relation(fields: [rinkId], references: [id])
+  deleted         Boolean  @default(false)
 }
 
 // New Rink model
@@ -130,7 +131,6 @@ model Rink {
   iceTimes  IceTime[]
 }
 
-// Ice Time type enum
 enum IceTimeTypeEnum {
   CLINIC              @map("Clinic")
   OPEN_SKATE          @map("Open Skate")
@@ -140,4 +140,5 @@ enum IceTimeTypeEnum {
   LEARN_TO_SKATE      @map("Learn to Skate")
   YOUTH_CLINIC        @map("Youth Clinic")
   ADULT_CLINIC        @map("Adult Clinic")
+  OTHER               @map("Other")
 }

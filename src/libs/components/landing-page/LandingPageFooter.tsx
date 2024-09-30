@@ -19,7 +19,7 @@ export function LandingPageFooter() {
                 className="flex items-center gap-4 font-semibold text-base"
             >
                 <img src="/favicon.ico" className="h-10 w-10 rounded-sm" alt="favicon" />
-                <span>SaasterKit</span>
+                <span>IceTime</span>
             </Link>
             <div className="flex-1" />
             <li className="hidden sm:flex font-medium flex-row items-center gap-5 text-sm lg:gap-6">

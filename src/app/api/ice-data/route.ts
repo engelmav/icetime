@@ -81,6 +81,7 @@ export async function GET(req: NextApiRequest, res: NextApiResponse) {
           in: types.length > 0 ? types : undefined,
         },
         date: dateRange,
+        deleted: false, // Add this line to filter out soft-deleted records
       },
       select: {
         type: true,

@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/libs/database';
 import { IceTimeTypeEnum } from '@prisma/client';
+import { format } from 'date-fns'; // Make sure to install date-fns in your backend
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
@@ -18,6 +19,8 @@ export async function GET(request: Request) {
   const youthClinic = searchParams.get('youthClinic') === 'true';
   const adultClinic = searchParams.get('adultClinic') === 'true';
   const dateFilter = searchParams.get('dateFilter');
+  const startTime = searchParams.get('startTime');
+  const endTime = searchParams.get('endTime');
 
   const types: IceTimeTypeEnum[] = [];
   if (clinic) types.push(IceTimeTypeEnum.CLINIC);
@@ -49,6 +52,22 @@ export async function GET(request: Request) {
       dateRange = { gte: today };
   }
 
+  let timeRange = {};
+  if (startTime) {
+    timeRange = { ...timeRange, startTime: { gte: startTime } };
+  }
+  if (endTime) {
+    timeRange = { ...timeRange, endTime: { lte: endTime } };
+  }
+
+  function formatTime(time: string): string {
+    const [hours, minutes] = time.split(':');
+    const date = new Date();
+    date.setHours(parseInt(hours, 10));
+    date.setMinutes(parseInt(minutes, 10));
+    return format(date, 'h:mm a');
+  }
+
   try {
     const iceData = await prisma.iceTime.findMany({
       where: {
@@ -56,6 +75,7 @@ export async function GET(request: Request) {
           in: types.length > 0 ? types : undefined,
         },
         date: dateRange,
+        ...timeRange,
         deleted: false,
       },
       select: {
@@ -78,7 +98,15 @@ export async function GET(request: Request) {
       ],
     });
 
-    return NextResponse.json(iceData);
+    // Format the time before sending the response
+    const formattedIceData = iceData.map(item => ({
+      ...item,
+      startTime: formatTime(item.startTime),
+      endTime: formatTime(item.endTime),
+      date: format(new Date(item.date), 'MMM d, yyyy') // Also format the date
+    }));
+
+    return NextResponse.json(formattedIceData);
   } catch (error) {
     console.error('Error fetching ice data:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });

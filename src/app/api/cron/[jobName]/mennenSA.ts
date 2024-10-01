@@ -1,64 +1,95 @@
-import { Configuration, OpenAIApi } from 'openai';
+import Anthropic from '@anthropic-ai/sdk';
 
-const configuration = new Configuration({
-  apiKey: process.env.OPENAI_API_KEY,
+const anthropic = new Anthropic({
+  apiKey: process.env.ANTHROPIC_API_KEY,
 });
-const openai = new OpenAIApi(configuration);
 
-async function processTextWithLLM(inputText: string) {
-  const response = await openai.createChatCompletion({
-    model: "gpt-3.5-turbo",
+export async function mennenSportsArena(inputText: string) {
+  const today = new Date().toISOString().split('T')[0];
+  const initialResponse = await anthropic.messages.create({
+    model: "claude-3-sonnet-20240229",
+    max_tokens: 1000,
     messages: [
       {
-        role: "system",
-        content: "You are a helpful assistant that converts text schedules into structured JSON data."
-      },
-      {
         role: "user",
-        content: `Convert the following text into a JSON array of public skating events:
+        content: `
+        There is a webpage that lists out the dates of certain Ice Rink events in the following way:
+        1. the event type (e.g., Public Skate)
+        2. The date range when they are held, (e.g.,  September 3rd – December 22nd)
+        3. A list of days with the time range on each day of the week for that event type.
 
-${inputText}
 
-Each event should have a date, startTime, and endTime. Use the date range provided to generate specific dates for each day of the week. Exclude the event on Sept. 14. Output in JSON format.`
+      Here is a snippet of that:
+      <BeginSnippet>
+      ${inputText}
+      </EndSnippet>
+
+      1. Use the startDate of today, which is ${today}
+      2. The endDate of the series of events
+      3. An attribute called "schedules" with the dayOfWeek followed by its startTime and endTime
+
+      The schema of this JSON object is as follows:
+      {
+  "startDate": "2023-09-03",
+  "endDate": "2023-12-22",
+  "schedules": [
+    {
+      "dayOfWeek": "Monday",
+      "startTime": "16:00",
+      "endTime": "17:30"
+    }
+      ...
+      ]  
+      Please ONLY output valid JSON, no explanations, no comments, and no other text.
+        `
       }
     ],
   });
+  const jsonResponse = JSON.parse(initialResponse.content[0].text);
 
-  if (!response.data.choices[0].message) {
-    throw new Error('No response from OpenAI');
+
+  const events = generateEvents(jsonResponse);
+  return events;
+
+
+  interface ScheduleData {
+    startDate: string;
+    endDate: string;
+    schedules: Array<{
+      dayOfWeek: string;
+      startTime: string;
+      endTime: string;
+    }>;
+    exceptions?: Array<{
+      date: string;
+    }>;
   }
 
-  return response.data.choices[0].message.content;
-}
+  function generateEvents(scheduleData: ScheduleData) {
+    const events = [];
+    const startDate = new Date(scheduleData.startDate);
+    const endDate = new Date(scheduleData.endDate);
+    const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
-export async function mennenSportsArena() {
-  const inputText = `
-Weekly Schedule: September 3rd – December 22nd
+    for (let currentDate = new Date(startDate); currentDate <= endDate; currentDate.setDate(currentDate.getDate() + 1)) {
+      const dayOfWeek = dayNames[currentDate.getDay()];
+      const schedule = scheduleData.schedules.find(s => s.dayOfWeek === dayOfWeek);
 
-Monday – 4:00 -5:30 PM
-Tuesday – 10:30 -12:00 PM
-Wednesday – 4:00 -5:30 PM
-Thursday – 10:30 -12:00 PM
-Friday – 4:00 -5:30 PM
-Saturday – 11:30 AM -1:00 PM*
-Sunday – 11:30 AM -1:00 PM
-*No Public Session on Sept. 14
-  `;
+      if (schedule) {
+        const dateString = currentDate.toISOString().split('T')[0];
+        const isException = scheduleData.exceptions && scheduleData.exceptions.some(e => e.date === dateString);
 
-  try {
-    const processedText = await processTextWithLLM(inputText);
-    console.log(processedText);
+        if (!isException) {
+          events.push({
+            date: dateString,
+            dayOfWeek: dayOfWeek,
+            startTime: schedule.startTime,
+            endTime: schedule.endTime
+          });
+        }
+      }
+    }
 
-    // Parse the JSON string into an object
-    const events = JSON.parse(processedText);
-
-    // Here you would typically save these events to your database
-    // For example:
-    // await saveEventsToDatabase(events);
-
-    return { success: true, message: 'Events processed successfully', events };
-  } catch (error) {
-    console.error('Error processing events:', error);
-    return { success: false, message: 'Error processing events', error: error instanceof Error ? error.message : 'Unknown error' };
+    return events;
   }
 }

@@ -263,7 +263,7 @@ export function LandingPageFeatures() {
                         {filteredIceData.map((item, index) => (
                             <div key={index} className="grid grid-cols-5 gap-4 py-2 border-b">
                                 <div>{getReadableIceTimeType(item.type)}</div>
-                                <div>{formatDate(new Date(item.date))}</div>
+                                <div>{item.date}</div>
                                 <div>{`${item.startTime} - ${item.endTime}`}</div>
                                 <div>
                                     <a href={item.rink.website || '#'} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">
@@ -273,7 +273,6 @@ export function LandingPageFeatures() {
                                 <div>{item.rink.location}</div>
                             </div>
                         ))}
-
                     </>
                 ) : (
                     <div className="text-center p-8 bg-muted rounded-lg w-full">

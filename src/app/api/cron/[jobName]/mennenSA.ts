@@ -1,11 +1,14 @@
 import Anthropic from '@anthropic-ai/sdk';
 import puppeteer from 'puppeteer';
+import { IceTimeTypeEnum } from '@prisma/client';
+import { prisma } from '@/libs/database';
+
 
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
 });
 
-export async function mennenSportsArena(inputText: string) {
+export async function mennenSportsArena() {
   // Use Puppeteer to pull the schedule data from https://www.morrisparks.net/mennen-landing/public-skating/
   const browser = await puppeteer.launch();
   const page = await browser.newPage();
@@ -23,24 +26,36 @@ export async function mennenSportsArena(inputText: string) {
       {
         role: "user",
         content: `
-        Can you see a schedule within the following HTML content? Please ONLY respond with the schedule, no other text.
-        Each schedule is in the following format:
+        Here is a chunk of HTML content. It contains a schedule with two date ranges.
+        Each date range is in the following format:
         1. The date range when they are held, (e.g.,  September 3rd – December 22nd)
         2. A list of days with the time range on each day of the week for that event type.
-
         Note: there are TWO date ranges. Just concatenate them.
-
+        Please ONLY respond with the schedule, no other text, in JSON with the following schema:
+        [
+          {
+            "startDate": "2023-09-03",
+            "endDate": "2023-12-22",
+            "schedules": [
+              {
+                "dayOfWeek": "Monday",
+                "startTime": "16:00",
+                "endTime": "17:30"
+              }
+            ]
+          }
+        ]
         HTML Content:
         ${mainContent}
         `
       }
     ],
   });
-
-  // Print Claude's response
-  console.log("Claude's response about the schedule:");
-  console.log(scheduleResponse.content[0].text); // ts-ignore
   
+  // Print Claude's response
+  const scheduleText = (scheduleResponse.content[0] as { text: string }).text;
+  console.log("Claude's response about the schedule:");
+  console.log(scheduleText);
   const today = new Date().toISOString().split('T')[0];
   const initialResponse = await anthropic.messages.create({
     model: "claude-3-sonnet-20240229",
@@ -57,7 +72,7 @@ export async function mennenSportsArena(inputText: string) {
 
       Here is a snippet of that:
       <BeginSnippet>
-      ${scheduleResponse.content[0].text.value}
+      ${scheduleText}
       </EndSnippet>
 
       1. Use the startDate of today, which is ${today}
@@ -81,10 +96,51 @@ export async function mennenSportsArena(inputText: string) {
       }
     ],
   });
-  const jsonResponse = JSON.parse(initialResponse.content[0].text); // ts-ignore
+  const jsonResponse = JSON.parse((initialResponse.content[0] as { text: string }).text);
   console.log("Claude's schedule data:", jsonResponse);
 
   const events = generateEvents(jsonResponse);
+
+  // Add the following code to create IceTime records
+
+  // Fetch the Mennen Sports Arena rink
+  const rink = await prisma.rink.findUnique({
+    where: { name: "Mennen Sports Arena" },
+  });
+
+  if (!rink) {
+    throw new Error("Rink not found");
+  }
+
+  // Soft delete existing records for this rink
+  await prisma.iceTime.updateMany({
+    where: {
+      rinkId: rink.id,
+      deleted: false,
+    },
+    data: {
+      deleted: true,
+    },
+  });
+  console.log("Existing records soft-deleted");
+
+  // Create new IceTime records
+  for (const event of events) {
+    await prisma.iceTime.create({
+      data: {
+        type: IceTimeTypeEnum.LEARN_TO_SKATE, // Assuming all events are open skate, adjust if needed
+        originalIceType: "Public Skate",
+        date: new Date(event.date),
+        startTime: event.startTime,
+        endTime: event.endTime,
+        rinkId: rink.id,
+        deleted: false,
+      },
+    });
+  }
+
+  console.log(`Persisted ${events.length} events to database`);
+
   return events;
 
   interface ScheduleData {

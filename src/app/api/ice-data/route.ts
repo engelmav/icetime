@@ -48,6 +48,10 @@ export async function GET(request: Request) {
       const endOfWeek = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000);
       dateRange = { gte: today, lte: endOfWeek };
       break;
+    case 'next7days':
+      const sevenDaysLater = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000);
+      dateRange = { gte: today, lte: sevenDaysLater };
+      break;
     default:
       dateRange = { gte: today };
   }

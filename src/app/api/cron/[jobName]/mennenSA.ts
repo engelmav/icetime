@@ -7,7 +7,9 @@ const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
 });
 
-export async function mennenSportsArena() {
+const today = new Date().toISOString().split('T')[0];
+
+export async function mennenSportsArenaPublicSkate() {
   // Use Puppeteer to pull the schedule data from https://www.morrisparks.net/mennen-landing/public-skating/
   const browser = await puppeteer.launch();
   const page = await browser.newPage();
@@ -50,12 +52,11 @@ export async function mennenSportsArena() {
       }
     ],
   });
-  
+
   // Print Claude's response
   const scheduleText = (scheduleResponse.content[0] as { text: string }).text;
   console.log("Claude's response about the schedule:");
   console.log(scheduleText);
-  const today = new Date().toISOString().split('T')[0];
   const initialResponse = await anthropic.messages.create({
     model: "claude-3-sonnet-20240229",
     max_tokens: 1000,
@@ -80,9 +81,9 @@ export async function mennenSportsArena() {
 
       The schema of this JSON object is as follows:
      [ {
-  "startDate": "2023-09-03",
-  "endDate": "2023-12-22",
-  "schedules": [
+    "startDate": "2023-09-03",
+      "endDate": "2023-12-22",
+      "schedules": [
     {
       "dayOfWeek": "Monday",
       "startTime": "16:00",
@@ -187,6 +188,7 @@ export async function mennenSportsArena() {
   }
 }
 
+
 export async function scrapeStickAndPuck() {
   const browser = await puppeteer.launch({
     headless: false,
@@ -194,7 +196,7 @@ export async function scrapeStickAndPuck() {
     args: ['--start-maximized']
   });
   const page = await browser.newPage();
-  await page.goto('https://register1.vermontsystems.com/wbwsc/njmorriscounty.wsc/search.html?Action=Start&SubAction=&_csrf_token=mb0V6G6F1N022J2X30363S3M714I4B5D0R5V4753561J5U616C53034S5W54461O6E4P606A0A004P6L4T706U3P6M4T0L5W5D5F5V705U4O5G55735P4F4B6F6Y4Y4U4R&type=Hockey&beginmonth=&endmonth=&category=MENN&age=&grade=&keyword=&keywordoption=Match+One&instructor=&daysofweek=&dayoption=All&timeblock=&primarycode=&gender=&spotsavailable=&bydayonly=No&beginyear=&season=&display=Detail&module=AR&multiselectlist_value=&arwebsearch_noresultsbutton=yes');
+  await page.goto('https://register1.vermontsystems.com/wbwsc/njmorriscounty.wsc/search.html?Action=Start&SubAction=&_csrf_token=mb0V6G6F1N022J2X30363S3M714I4B5D0R5V4753561J5U616C53034S5W54461O6E4P606A0A004P6L4T706U3P6M4T0L5W5D5F5V705U4O5G55735P4F4B6F6Y4Y4U4R4R&type=Hockey&beginmonth=&endmonth=&category=MENN&age=&grade=&keyword=&keywordoption=Match+One&instructor=&daysofweek=&dayoption=All&timeblock=&primarycode=&gender=&spotsavailable=&bydayonly=No&beginyear=&season=&display=Detail&module=AR&multiselectlist_value=&arwebsearch_noresultsbutton=yes');
 
   // Wait for the content to load
   await page.waitForSelector('#arwebsearch_output_table');
@@ -209,7 +211,7 @@ export async function scrapeStickAndPuck() {
     const secondTable = tables[1];
     return secondTable ? secondTable.outerHTML : null;
   });
-  
+
 
   console.log('Scraped hockey schedule:', scheduleData);
 
@@ -221,25 +223,27 @@ export async function scrapeStickAndPuck() {
       {
         role: "user",
         content: `
-Can you express the Stick & Puck Session schedule in JSON based on this HTML blob? Use the following schema:
+        1. Kindly express the Stick & Puck Session schedule in JSON based on the below HTML blob.
+        2. Use the startDate of today, which is ${today}
+        3. Use the following schema:
 
-{
-  "title": "Stick & Puck Schedule",
+        {
+          "title": "Stick & Puck Schedule",
 
-  "sessions": [
-    ["10/14/2024", // the start date
-       "10/14/2024", // the end date
-       "11:45 am", // the start time
-       "12:45 pm", // the end time
-       "M", // days of the week
-    ],
-    [
+          "sessions": [
+            ["10/14/2024", // the start date
+              "10/14/2024", // the end date
+              "11:45 am", // the start time
+              "12:45 pm", // the end time
+              "M", // days of the week
+            ],
+            [
 
-    ],
-  ]
-}
+            ],
+          ]
+        }
 
-        HTML Content:
+        HTML blob:
         ${scheduleData}
 
         Please ONLY respond with valid JSON, no explanations, no comments, and no other text.
@@ -251,6 +255,9 @@ Can you express the Stick & Puck Session schedule in JSON based on this HTML blo
   console.log("Claude's response about the schedule:", scheduleText);
   // Parse Claude's response
   const scheduleJson = JSON.parse(scheduleText);
+  console.log("Parsed schedule JSON:", scheduleJson);
+  const expandedEvents = expandSessions(scheduleJson.sessions);
+  console.log("Expanded events:", expandedEvents);
 
   // Fetch the Mennen Sports Arena rink
   const rink = await prisma.rink.findUnique({
@@ -273,31 +280,19 @@ Can you express the Stick & Puck Session schedule in JSON based on this HTML blo
     },
   });
 
-  // Create new IceTime records for Stick & Puck sessions
-  for (const session of scheduleJson.sessions) {
-    const [startDate, endDate, startTime, endTime, daysOfWeek] = session;
-    
-    // Convert date strings to Date objects
-    const start = new Date(startDate);
-    const end = new Date(endDate);
-
-    // Generate events for each day in the date range
-    for (let date = new Date(start); date <= end; date.setDate(date.getDate() + 1)) {
-      // Check if the current day is included in the session's days of the week
-      if (daysOfWeek.includes(getDayAbbreviation(date.getDay()))) {
-        await prisma.iceTime.create({
-          data: {
-            type: IceTimeTypeEnum.STICK_TIME,
-            originalIceType: "Stick & Puck",
-            date: new Date(date),
-            startTime,
-            endTime,
-            rinkId: rink.id,
-            deleted: false,
-          },
-        });
-      }
-    }
+  // Create new IceTime records for Stick & Puck sessions using expandedEvents
+  for (const event of expandedEvents) {
+    await prisma.iceTime.create({
+      data: {
+        type: IceTimeTypeEnum.STICK_TIME,
+        originalIceType: "Stick & Puck",
+        date: new Date(event.date),
+        startTime: event.startTime,
+        endTime: event.endTime,
+        rinkId: rink.id,
+        deleted: false,
+      },
+    });
   }
 
   console.log(`Persisted ${scheduleJson.sessions.length} Stick & Puck sessions to database`);
@@ -307,8 +302,55 @@ Can you express the Stick & Puck Session schedule in JSON based on this HTML blo
   return scheduleJson;
 }
 
+
+type DateString = `${number}/${number}/${number}`;
+type TimeString = `${number}:${number} ${'am' | 'pm'}`;
+type DayOfWeek = 'Su' | 'M' | 'Tu' | 'W' | 'Th' | 'F' | 'Sa';
+
+type Session = [
+  DateString, // start date
+  DateString, // end date
+  TimeString, // start time
+  TimeString, // end time
+  DayOfWeek   // days of the week
+];
+
+interface ExpandedEvent {
+  date: DateString;
+  startTime: TimeString;
+  endTime: TimeString;
+}
+
+function expandSessions(sessions: Session[]): ExpandedEvent[] {
+  const expandedEvents: ExpandedEvent[] = [];
+
+  for (const session of sessions) {
+    const [startDate, endDate, startTime, endTime, daysOfWeek] = session;
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+
+    for (let date = new Date(start); date <= end; date.setDate(date.getDate() + 1)) {
+      const dayAbbr = getDayAbbreviation(date.getDay()) as DayOfWeek;
+      if (daysOfWeek.includes(dayAbbr)) {
+        expandedEvents.push({
+          date: formatDate(date),
+          startTime,
+          endTime,
+        });
+      }
+    }
+  }
+
+  return expandedEvents;
+}
+
 // Helper function to get day abbreviation
 function getDayAbbreviation(day: number): string {
   const days = ['Su', 'M', 'Tu', 'W', 'Th', 'F', 'Sa'];
   return days[day];
+}
+
+// Helper function to format Date as DateString
+function formatDate(date: Date): DateString {
+  return `${date.getMonth() + 1}/${date.getDate()}/${date.getFullYear()}` as DateString;
 }

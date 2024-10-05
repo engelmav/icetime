@@ -1,6 +1,11 @@
 import { prisma } from '@/libs/database';
 import { IceTimeTypeEnum } from '@prisma/client';
 import puppeteer from 'puppeteer';
+import Anthropic from '@anthropic-ai/sdk';
+
+const anthropic = new Anthropic({
+  apiKey: process.env.ANTHROPIC_API_KEY,
+});
 
 const BROWSER_TIMEOUT = 1000 * 60 * 60; // 1 hour in milliseconds
 
@@ -33,41 +38,16 @@ export async function bridgewaterIceArena() {
     await page.waitForSelector('.vevent', { timeout: 30000 });
     console.log("Events page loaded");
 
-    const events = await page.evaluate(() => {
-      const eventElements = document.querySelectorAll('.vevent');
-      return Array.from(eventElements).map((element, index) => {
-        const title = element.querySelector('.summary a')?.textContent?.trim() || '';
-        const dateElement = index % 2 === 0 ? element : element.previousElementSibling;
-        
-        let month = '';
-        let day = '';
-        
-        if (dateElement) {
-          month = dateElement.querySelector('.month')?.textContent?.trim() || '';
-          day = dateElement.querySelector('.date')?.textContent?.trim() || '';
-        }
-        
-        const year = new Date().getFullYear();
-        
-        const startTime = element.querySelector('.dtstart[title]')?.getAttribute('title') || '';
-        const endTime = element.querySelector('.dtend[title]')?.getAttribute('title') || '';
-        
-        const tags = Array.from(element.querySelectorAll('.tags a'))
-          .map(tag => tag.textContent?.trim())
-          .filter(Boolean)
-          .join(', ');
-
-        return {
-          title,
-          date: `${year}-${month}-${day.padStart(2, '0')}`,
-          startTime: startTime ? new Date(startTime).toTimeString().split(' ')[0] : '',
-          endTime: endTime ? new Date(endTime).toTimeString().split(' ')[0] : '',
-          tags
-        };
-      });
+    // Log all found .vevent elements
+    const eventElements = await page.$$eval('.vevent', (elements) => {
+      return elements.map((el) => el.outerHTML);
     });
 
-    console.log(`Found ${events.length} events`);
+    // Use Claude to extract events
+    const events = await extractEventsWithClaude(JSON.stringify(eventElements));
+
+    console.log(`Extracted ${events.length} events:`);
+    console.log(JSON.stringify(events, null, 2));
 
     // Soft delete existing records for this rink
     const rink = await prisma.rink.findUnique({
@@ -89,57 +69,73 @@ export async function bridgewaterIceArena() {
     });
     console.log("Existing records soft-deleted");
 
-    // Map the events to IceTime format and persist to database
-    const iceTimeEvents = events.map(event => ({
-      type: mapEventTypeToEnum(event.title),
-      originalIceType: event.title,
-      date: new Date(event.date),
-      startTime: event.startTime,
-      endTime: event.endTime,
-      rinkId: rink.id,
-      deleted: false,
-    }));
-
-    // Persist events to database
-    for (const iceTimeEvent of iceTimeEvents) {
+    // Add new events to the icetime table
+    for (const event of events) {
+      const [type, date, startTime, endTime] = event;
+      
       await prisma.iceTime.create({
-        data: iceTimeEvent,
+        data: {
+          rinkId: rink.id,
+          date: new Date(date),
+          startTime,
+          endTime,
+          type: mapEventTypeToIceTimeType(type),
+          originalIceType: type,
+          deleted: false,
+        },
       });
     }
-
-    console.log(`Persisted ${iceTimeEvents.length} events to database`);
-
-    // Set a timeout to close the browser after BROWSER_TIMEOUT
-    setTimeout(() => {
-      browser.close();
-      console.log("Browser closed due to timeout");
-    }, BROWSER_TIMEOUT);
-
+    console.log(`Added ${events.length} new events to the icetime table`);
     return events;
-
   } catch (error) {
-    console.error('Error fetching events:', error);
+    console.error("Error:", error);
+  } finally {
     await browser.close();
-    return [];
   }
 }
 
-// Helper function to map event titles to IceTimeTypeEnum
-function mapEventTypeToEnum(title: string): IceTimeTypeEnum {
-  const lowerTitle = title.toLowerCase();
-  if (lowerTitle.includes('public skate')) {
-    return IceTimeTypeEnum.OPEN_SKATE;
-  } else if (lowerTitle.includes('stick time')) {
-    return IceTimeTypeEnum.STICK_TIME;
-  } else if (lowerTitle.includes('learn to skate')) {
-    return IceTimeTypeEnum.LEARN_TO_SKATE;
-  } else if (lowerTitle.includes('youth clinic')) {
-    return IceTimeTypeEnum.YOUTH_CLINIC;
-  } else if (lowerTitle.includes('adult clinic')) {
-    return IceTimeTypeEnum.ADULT_CLINIC;
-  } else if (lowerTitle.includes('open hockey')) {
-    return IceTimeTypeEnum.OPEN_HOCKEY;
+// Helper function to map event types to IceTimeTypeEnum
+function mapEventTypeToIceTimeType(eventType: string): IceTimeTypeEnum {
+  switch (eventType.toLowerCase()) {
+    case 'public skate':
+      return IceTimeTypeEnum.OPEN_SKATE;
+    case 'stick time':
+      return IceTimeTypeEnum.STICK_TIME;
+    case 'open hockey':
+      return IceTimeTypeEnum.OPEN_HOCKEY;
+    case 'learn to skate':
+      return IceTimeTypeEnum.LEARN_TO_SKATE;
+    case 'youth clinic':
+      return IceTimeTypeEnum.YOUTH_CLINIC;
+    case 'adult clinic':
+      return IceTimeTypeEnum.ADULT_CLINIC;
+    // Add more mappings as needed
+    default:
+      return IceTimeTypeEnum.OTHER;
   }
-  // Add more mappings as needed
-  return IceTimeTypeEnum.OTHER;
+}
+
+export async function extractEventsWithClaude(eventElementsString: string): Promise<any[]> {
+  const today = new Date().toISOString().split('T')[0];
+
+  const scheduleResponse = await anthropic.messages.create({
+    model: "claude-3-sonnet-20240229",
+    max_tokens: 1000,
+    messages: [
+      {
+        role: "user",
+        content: `
+        Can you extract the list of events from this HTML? Put them in a 
+        JSON format such as [type, YYYY-MM-DD, startTime, endTime] (using HH:MM 24h time). 
+        Kindly respond only with JSON, no other text.
+
+
+        ${eventElementsString}
+        `
+      }
+    ],
+  });
+
+  const scheduleText = (scheduleResponse.content[0] as { text: string }).text;
+  return JSON.parse(scheduleText);
 }

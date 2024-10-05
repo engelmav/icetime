@@ -45,7 +45,7 @@ export function LandingPageHeader() {
                             href="#landing-features"
                             className="text-muted-foreground transition-colors hover:text-foreground"
                         >
-                            {t('landing.nav.features')}
+                            Affiliates
                         </a>
                         <a
                             href="#landing-pricing"
@@ -63,7 +63,7 @@ export function LandingPageHeader() {
                             href="/docs"
                             className="text-muted-foreground transition-colors hover:text-foreground"
                         >
-                            {t('landing.nav.docs')}
+                            About
                         </a>
                     </nav>
                     <div className="flex-1" />
@@ -85,13 +85,7 @@ export function LandingPageHeader() {
                     href="#landing-features"
                     className="hidden sm:block text-muted-foreground transition-colors hover:text-foreground"
                 >
-                    {t('landing.nav.features')}
-                </a>
-                <a
-                    href="#landing-pricing"
-                    className="hidden sm:block text-muted-foreground transition-colors hover:text-foreground"
-                >
-                    {t('landing.nav.pricing')}
+                    Affiliates
                 </a>
                 <a
                     href="#landing-faq"
@@ -103,7 +97,7 @@ export function LandingPageHeader() {
                     href="/docs"
                     className="hidden sm:block text-muted-foreground transition-colors hover:text-foreground"
                 >
-                    {t('landing.nav.docs')}
+                    About
                 </a>
             </nav>
             <div className="flex-1" />
@@ -116,12 +110,6 @@ export function LandingPageHeader() {
                 <SignInButton
                     mode="modal"
                 >
-                    <Link
-                        href="#"
-                        className="text-muted-foreground transition-colors hover:text-foreground"
-                    >
-                        {t('landing.nav.sign_in_for_demo')}
-                    </Link>
                 </SignInButton>
             </SignedOut>
             <div className="hidden sm:flex gap-2">

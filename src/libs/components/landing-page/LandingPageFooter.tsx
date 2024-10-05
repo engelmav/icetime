@@ -27,7 +27,7 @@ export function LandingPageFooter() {
                     href="#landing-features"
                     className="text-muted-foreground transition-colors hover:text-foreground"
                 >
-                    {t('landing.nav.features')}
+                    Affiliates
                 </a>
                 <a
                     href="#landing-pricing"
@@ -45,7 +45,7 @@ export function LandingPageFooter() {
                     href="/docs"
                     className="text-muted-foreground transition-colors hover:text-foreground"
                 >
-                    {t('landing.nav.docs')}
+                    About
                 </a>
             </li>
             <li className="font-medium flex flex-row items-center gap-2">

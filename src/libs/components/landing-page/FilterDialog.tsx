@@ -48,26 +48,32 @@ function Dialog({ open, onOpenChange, children }: DialogProps) {
 interface FilterDialogProps {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
-  FilterCheckboxes: React.ComponentType;
+  title: string;
+  description: string;
+  children: React.ReactNode;
+  onApply: () => void;
 }
 
-export function FilterDialog({ isOpen, onOpenChange, FilterCheckboxes }: FilterDialogProps) {
+export function FilterDialog({ isOpen, onOpenChange, title, description, children, onApply }: FilterDialogProps) {
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <div className="space-y-4">
         <div>
-          <h2 className="text-lg font-semibold text-foreground">Filter Options</h2>
-          <p className="text-sm text-muted-foreground">Select your filter options below.</p>
+          <h2 className="text-lg font-semibold text-foreground">{title}</h2>
+          <p className="text-sm text-muted-foreground">{description}</p>
         </div>
         <div className="max-h-60 overflow-y-auto">
-          <FilterCheckboxes />
+          {children}
         </div>
         <div>
           <Button
             className="w-full"
-            onClick={() => onOpenChange(false)}
+            onClick={() => {
+              onApply();
+              onOpenChange(false);
+            }}
           >
-            Apply Filters
+            Apply
           </Button>
         </div>
       </div>

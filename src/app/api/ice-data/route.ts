@@ -21,6 +21,7 @@ export async function GET(request: Request) {
   const dateFilter = searchParams.get('dateFilter');
   const startTime = searchParams.get('startTime');
   const endTime = searchParams.get('endTime');
+  const other = searchParams.get('other') === 'true';
 
   const types: IceTimeTypeEnum[] = [];
   if (clinic) types.push(IceTimeTypeEnum.CLINIC);
@@ -31,6 +32,7 @@ export async function GET(request: Request) {
   if (learnToSkate) types.push(IceTimeTypeEnum.LEARN_TO_SKATE);
   if (youthClinic) types.push(IceTimeTypeEnum.YOUTH_CLINIC);
   if (adultClinic) types.push(IceTimeTypeEnum.ADULT_CLINIC);
+  if (other) types.push(IceTimeTypeEnum.OTHER);
 
   let dateRange: { gte?: Date; lte?: Date } = {};
   const today = new Date();
@@ -84,6 +86,7 @@ export async function GET(request: Request) {
       },
       select: {
         type: true,
+        originalIceType: true, // Add this line
         date: true,
         startTime: true,
         endTime: true,
@@ -92,6 +95,8 @@ export async function GET(request: Request) {
             name: true,
             location: true,
             website: true,
+            latitude: true,  // Add this line
+            longitude: true, // Add this line
           }
         },
       },
@@ -107,7 +112,13 @@ export async function GET(request: Request) {
       ...item,
       startTime: formatTime(item.startTime),
       endTime: formatTime(item.endTime),
-      date: format(new Date(item.date), 'MMM d, yyyy') // Also format the date
+      date: format(new Date(item.date), 'MMM d, yyyy'),
+      originalIceType: item.type === IceTimeTypeEnum.OTHER ? item.originalIceType : undefined, // Add this line
+      rink: {
+        ...item.rink,
+        latitude: item.rink.latitude ? parseFloat(item.rink.latitude.toString()) : null,  // Add this line
+        longitude: item.rink.longitude ? parseFloat(item.rink.longitude.toString()) : null, // Add this line
+      }
     }));
 
     return NextResponse.json(formattedIceData);

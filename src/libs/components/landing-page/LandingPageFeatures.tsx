@@ -3,16 +3,17 @@
 import { useI18n } from '@/libs/locales/client';
 import { Badge } from '@/libs/ui/badge';
 import { Card, CardDescription, CardHeader, CardTitle } from '@/libs/ui/card';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { getReadableIceTimeType } from '@/libs/utils';
 import { useMediaQuery } from '@/libs/hooks/useMediaQuery'
 import { Button } from '@/libs/ui/button';
 import { FilterDialog } from './FilterDialog';
 import { IceTimeTypeEnum } from '@prisma/client';
-
+import { Input } from '@/libs/ui/input';
 
 interface IceDataItem {
   type: IceTimeTypeEnum;
+  originalIceType?: string;
   date: string;
   startTime: string;
   endTime: string;
@@ -20,12 +21,46 @@ interface IceDataItem {
     name: string;
     location: string;
     website: string | null;
+    latitude: number;
+    longitude: number;
   };
+  distance?: number;
+}
+
+// TimeRangePicker component
+function TimeRangePicker({ startTime, endTime, onTimeRangeChange }: {
+    startTime: string;
+    endTime: string;
+    onTimeRangeChange: (startTime: string, endTime: string) => void;
+}) {
+    return (
+        <div className="flex flex-col space-y-4">
+            <div>
+                <label htmlFor="startTime" className="block text-sm font-medium text-gray-700">Start Time</label>
+                <Input
+                    type="time"
+                    id="startTime"
+                    value={startTime}
+                    onChange={(e) => onTimeRangeChange(e.target.value, endTime)}
+                />
+            </div>
+            <div>
+                <label htmlFor="endTime" className="block text-sm font-medium text-gray-700">End Time</label>
+                <Input
+                    type="time"
+                    id="endTime"
+                    value={endTime}
+                    onChange={(e) => onTimeRangeChange(startTime, e.target.value)}
+                />
+            </div>
+        </div>
+    );
 }
 
 export function LandingPageFeatures() {
     const t = useI18n();
     const [filteredIceData, setFilteredIceData] = useState<IceDataItem[]>([]);
+    const [userLocation, setUserLocation] = useState<{ lat: number; lon: number } | null>(null);
     const [openSkate, setOpenSkate] = useState(false);
     const [stickTime, setStickTime] = useState(false);
     const [openHockey, setOpenHockey] = useState(false);
@@ -33,9 +68,59 @@ export function LandingPageFeatures() {
     const [learnToSkate, setLearnToSkate] = useState(false);
     const [youthClinic, setYouthClinic] = useState(false);
     const [adultClinic, setAdultClinic] = useState(false);
+    const [other, setOther] = useState(false);
     const [dateFilter, setDateFilter] = useState('today');
     const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
     const isMobile = useMediaQuery('(max-width: 640px)');
+    const [startTime, setStartTime] = useState('00:00');
+    const [endTime, setEndTime] = useState('23:59');
+    const [isTimeFilterApplied, setIsTimeFilterApplied] = useState(false);
+    const [isIceTypeFilterOpen, setIsIceTypeFilterOpen] = useState(false);
+    const [isTimeFilterOpen, setIsTimeFilterOpen] = useState(false);
+
+    useEffect(() => {
+        async function getUserLocation() {
+            try {
+                const response = await fetch('https://ipapi.co/json/');
+                const data = await response.json();
+                setUserLocation({ lat: data.latitude, lon: data.longitude });
+            } catch (error) {
+                console.error('Error fetching user location:', error);
+            }
+        }
+
+        getUserLocation();
+    }, []);
+
+    const calculateDistance = useCallback((lat1: number, lon1: number, lat2: number, lon2: number) => {
+        const R = 6371; // Radius of the Earth in km
+        const dLat = (lat2 - lat1) * Math.PI / 180;
+        const dLon = (lon2 - lon1) * Math.PI / 180;
+        const a = 
+            Math.sin(dLat/2) * Math.sin(dLat/2) +
+            Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
+            Math.sin(dLon/2) * Math.sin(dLon/2); 
+        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)); 
+        return R * c; // Distance in km
+    }, []);
+
+    useEffect(() => {
+        if (userLocation) {
+            setFilteredIceData(prevData => 
+                prevData.map(item => ({
+                    ...item,
+                    distance: item.rink.latitude && item.rink.longitude
+                        ? calculateDistance(
+                            userLocation.lat,
+                            userLocation.lon,
+                            item.rink.latitude,
+                            item.rink.longitude
+                        )
+                        : undefined
+                }))
+            );
+        }
+    }, [userLocation, calculateDistance]);
 
     useEffect(() => {
         async function fetchIceData() {
@@ -47,7 +132,10 @@ export function LandingPageFeatures() {
                 learnToSkate: learnToSkate.toString(),
                 youthClinic: youthClinic.toString(),
                 adultClinic: adultClinic.toString(),
+                other: other.toString(),
                 dateFilter: dateFilter,
+                startTime: startTime,
+                endTime: endTime,
             });
 
             try {
@@ -59,12 +147,45 @@ export function LandingPageFeatures() {
                 setFilteredIceData(data);
             } catch (error) {
                 console.error('Error fetching ice data:', error);
-                // Handle error (e.g., show error message to user)
             }
         }
 
         fetchIceData();
-    }, [openSkate, stickTime, openHockey, substituteRequest, learnToSkate, youthClinic, adultClinic, dateFilter]);
+    }, [openSkate, stickTime, openHockey, substituteRequest, learnToSkate, youthClinic, adultClinic, other, dateFilter, startTime, endTime]);
+
+    const clearFilters = () => {
+        setOpenSkate(false);
+        setStickTime(false);
+        setOpenHockey(false);
+        setSubstituteRequest(false);
+        setLearnToSkate(false);
+        setYouthClinic(false);
+        setAdultClinic(false);
+        setOther(false);
+        setDateFilter('today');
+        setStartTime('00:00');
+        setEndTime('23:59');
+        setIsTimeFilterApplied(false);
+    };
+
+    const handleTimeRangeChange = (newStartTime: string, newEndTime: string) => {
+        setStartTime(newStartTime);
+        setEndTime(newEndTime);
+        setIsTimeFilterApplied(true);
+    };
+
+    const clearTimeFilter = () => {
+        setStartTime('00:00');
+        setEndTime('23:59');
+        setIsTimeFilterApplied(false);
+    };
+
+    const getTimeFilterButtonText = () => {
+        if (isTimeFilterApplied) {
+            return `${startTime} - ${endTime}`;
+        }
+        return 'Set time range';
+    };
 
     const content = [
         {
@@ -93,7 +214,7 @@ export function LandingPageFeatures() {
         },
     ];
 
-    const FilterCheckboxes = () => (
+    const IceTypeFilters = () => (
         <>
             <label className="flex items-center">
                 <input
@@ -158,7 +279,24 @@ export function LandingPageFeatures() {
                 />
                 Adult Clinic
             </label>
+            <label className="flex items-center">
+                <input
+                    type="checkbox"
+                    className="mr-2"
+                    checked={other}
+                    onChange={(e) => setOther(e.target.checked)}
+                />
+                Other
+            </label>
         </>
+    );
+
+    const TimeRangeFilter = () => (
+        <TimeRangePicker
+            startTime={startTime}
+            endTime={endTime}
+            onTimeRangeChange={handleTimeRangeChange}
+        />
     );
 
     return (
@@ -231,38 +369,81 @@ export function LandingPageFeatures() {
                     </div>
                 </div>
                 <div className="w-full sm:col-span-full mb-4">
-                    {isMobile ? (
-                        <Button
-                            className="w-full sm:w-auto px-4 py-2 rounded bg-primary text-primary-foreground"
-                            onClick={() => setIsFilterModalOpen(true)}
-                        >
-                            Filter by...
-                        </Button>
-                    ) : (
-                        <div className="flex flex-wrap justify-center gap-4 mb-4">
-                            <FilterCheckboxes />
-                        </div>
-                    )}
+                    <div className="flex flex-wrap justify-center gap-4">
+                        {isMobile ? (
+                            <>
+                                <Button
+                                    className="w-full sm:w-auto px-4 py-2 rounded bg-primary text-primary-foreground"
+                                    onClick={() => setIsIceTypeFilterOpen(true)}
+                                >
+                                    Filter by Ice Type
+                                </Button>
+                                <Button
+                                    className="w-full sm:w-auto px-4 py-2 rounded bg-primary text-primary-foreground"
+                                    onClick={() => setIsTimeFilterOpen(true)}
+                                >
+                                    {getTimeFilterButtonText()}
+                                </Button>
+                            </>
+                        ) : (
+                            <>
+                                <IceTypeFilters />
+                                <Button
+                                    variant="outline"
+                                    onClick={() => setIsTimeFilterOpen(true)}
+                                >
+                                    {getTimeFilterButtonText()}
+                                </Button>
+                            </>
+                        )}
+                    </div>
+                </div>
+                <div className="w-full sm:col-span-full mb-4 flex justify-center">
+                    <Button
+                        className="px-4 py-2 rounded bg-secondary text-secondary-foreground"
+                        onClick={clearFilters}
+                    >
+                        Clear Filters
+                    </Button>
                 </div>
             </div>
             <FilterDialog
-                isOpen={isFilterModalOpen}
-                onOpenChange={setIsFilterModalOpen}
-                FilterCheckboxes={FilterCheckboxes}
-            />
+                isOpen={isIceTypeFilterOpen}
+                onOpenChange={setIsIceTypeFilterOpen}
+                title="Ice Type Filters"
+                description="Select the ice types you want to filter by."
+                onApply={() => {/* Apply ice type filters */}}
+            >
+                <IceTypeFilters />
+            </FilterDialog>
+            <FilterDialog
+                isOpen={isTimeFilterOpen}
+                onOpenChange={setIsTimeFilterOpen}
+                title="Time Range Filter"
+                description="Set the time range for your filter."
+                onApply={() => {/* Apply time range filter */}}
+            >
+                <TimeRangeFilter />
+            </FilterDialog>
             <div className="col-span-3">
                 {filteredIceData.length > 0 ? (
                     <>
-                        <div className="grid grid-cols-5 gap-4 font-bold mb-2">
+                        <div className="grid grid-cols-6 gap-4 font-bold mb-2">
                             <div>Ice Type</div>
                             <div>Date</div>
                             <div>Time</div>
                             <div>Rink</div>
                             <div>Location</div>
+                            <div>Distance</div>
                         </div>
                         {filteredIceData.map((item, index) => (
-                            <div key={index} className="grid grid-cols-5 gap-4 py-2 border-b">
-                                <div>{getReadableIceTimeType(item.type)}</div>
+                            <div key={index} className="grid grid-cols-6 gap-4 py-2 border-b">
+                                <div>
+                                    {getReadableIceTimeType(item.type)}
+                                    {item.type === IceTimeTypeEnum.OTHER && item.originalIceType && (
+                                        <div className="text-xs text-gray-500">{item.originalIceType}</div>
+                                    )}
+                                </div>
                                 <div>{item.date}</div>
                                 <div>{`${item.startTime} - ${item.endTime}`}</div>
                                 <div>
@@ -271,6 +452,13 @@ export function LandingPageFeatures() {
                                     </a>
                                 </div>
                                 <div>{item.rink.location}</div>
+                                <div>
+                                    {item.distance !== undefined 
+                                        ? `${item.distance.toFixed(1)} km` 
+                                        : item.rink.latitude && item.rink.longitude 
+                                            ? 'Calculating...' 
+                                            : 'N/A'}
+                                </div>
                             </div>
                         ))}
                     </>

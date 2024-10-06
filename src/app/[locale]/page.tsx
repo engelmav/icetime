@@ -1,11 +1,7 @@
 import {
-    LandingPageFAQ,
     LandingPageFeatures,
     LandingPageFooter,
     LandingPageHeader,
-    LandingPageHero,
-    LandingPagePricing,
-    LandingPageWaitlist,
 } from '@/libs/components/landing-page';
 
 export default function Page() {
@@ -26,7 +22,7 @@ export default function Page() {
                 <div className="bg-muted py-16">
                     {/* <LandingPageFAQ /> */}
                 </div>
-                <LandingPageWaitlist />
+
                 <LandingPageFooter />
             </div>
         </div>

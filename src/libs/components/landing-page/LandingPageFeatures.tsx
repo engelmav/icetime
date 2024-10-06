@@ -189,6 +189,50 @@ export function LandingPageFeatures() {
         return 'Set time range';
     };
 
+    const countIceTypes = useCallback(() => {
+        const counts = {
+            openSkate: 0,
+            stickTime: 0,
+            openHockey: 0,
+            substituteRequest: 0,
+            learnToSkate: 0,
+            youthClinic: 0,
+            adultClinic: 0,
+            other: 0
+        };
+
+        filteredIceData.forEach(item => {
+            switch (item.type) {
+                case IceTimeTypeEnum.OPEN_SKATE:
+                    counts.openSkate++;
+                    break;
+                case IceTimeTypeEnum.STICK_TIME:
+                    counts.stickTime++;
+                    break;
+                case IceTimeTypeEnum.OPEN_HOCKEY:
+                    counts.openHockey++;
+                    break;
+                case IceTimeTypeEnum.SUBSTITUTE_REQUEST:
+                    counts.substituteRequest++;
+                    break;
+                case IceTimeTypeEnum.LEARN_TO_SKATE:
+                    counts.learnToSkate++;
+                    break;
+                case IceTimeTypeEnum.YOUTH_CLINIC:
+                    counts.youthClinic++;
+                    break;
+                case IceTimeTypeEnum.ADULT_CLINIC:
+                    counts.adultClinic++;
+                    break;
+                case IceTimeTypeEnum.OTHER:
+                    counts.other++;
+                    break;
+            }
+        });
+
+        return counts;
+    }, [filteredIceData]);
+
     const content = [
         {
             title: 'Real-time Ice Availability',
@@ -216,82 +260,85 @@ export function LandingPageFeatures() {
         },
     ];
 
-    const IceTypeFilters = () => (
-        <>
-            <label className="flex items-center">
-                <input
-                    type="checkbox"
-                    className="mr-2"
-                    checked={openSkate}
-                    onChange={(e) => setOpenSkate(e.target.checked)}
-                />
-                Open Skate
-            </label>
-            <label className="flex items-center">
-                <input
-                    type="checkbox"
-                    className="mr-2"
-                    checked={stickTime}
-                    onChange={(e) => setStickTime(e.target.checked)}
-                />
-                Stick Time
-            </label>
-            <label className="flex items-center">
-                <input
-                    type="checkbox"
-                    className="mr-2"
-                    checked={openHockey}
-                    onChange={(e) => setOpenHockey(e.target.checked)}
-                />
-                Open Hockey
-            </label>
-            <label className="flex items-center">
-                <input
-                    type="checkbox"
-                    className="mr-2"
-                    checked={substituteRequest}
-                    onChange={(e) => setSubstituteRequest(e.target.checked)}
-                />
-                Substitute Request
-            </label>
-            <label className="flex items-center">
-                <input
-                    type="checkbox"
-                    className="mr-2"
-                    checked={learnToSkate}
-                    onChange={(e) => setLearnToSkate(e.target.checked)}
-                />
-                Learn to Skate
-            </label>
-            <label className="flex items-center">
-                <input
-                    type="checkbox"
-                    className="mr-2"
-                    checked={youthClinic}
-                    onChange={(e) => setYouthClinic(e.target.checked)}
-                />
-                Youth Clinic
-            </label>
-            <label className="flex items-center">
-                <input
-                    type="checkbox"
-                    className="mr-2"
-                    checked={adultClinic}
-                    onChange={(e) => setAdultClinic(e.target.checked)}
-                />
-                Adult Clinic
-            </label>
-            <label className="flex items-center">
-                <input
-                    type="checkbox"
-                    className="mr-2"
-                    checked={other}
-                    onChange={(e) => setOther(e.target.checked)}
-                />
-                Other
-            </label>
-        </>
-    );
+    const IceTypeFilters = () => {
+        const counts = countIceTypes();
+        return (
+            <>
+                <label className="flex items-center">
+                    <input
+                        type="checkbox"
+                        className="mr-2"
+                        checked={openSkate}
+                        onChange={(e) => setOpenSkate(e.target.checked)}
+                    />
+                    Open Skate ({counts.openSkate})
+                </label>
+                <label className="flex items-center">
+                    <input
+                        type="checkbox"
+                        className="mr-2"
+                        checked={stickTime}
+                        onChange={(e) => setStickTime(e.target.checked)}
+                    />
+                    Stick Time ({counts.stickTime})
+                </label>
+                <label className="flex items-center">
+                    <input
+                        type="checkbox"
+                        className="mr-2"
+                        checked={openHockey}
+                        onChange={(e) => setOpenHockey(e.target.checked)}
+                    />
+                    Open Hockey ({counts.openHockey})
+                </label>
+                <label className="flex items-center">
+                    <input
+                        type="checkbox"
+                        className="mr-2"
+                        checked={substituteRequest}
+                        onChange={(e) => setSubstituteRequest(e.target.checked)}
+                    />
+                    Substitute Request ({counts.substituteRequest})
+                </label>
+                <label className="flex items-center">
+                    <input
+                        type="checkbox"
+                        className="mr-2"
+                        checked={learnToSkate}
+                        onChange={(e) => setLearnToSkate(e.target.checked)}
+                    />
+                    Learn to Skate ({counts.learnToSkate})
+                </label>
+                <label className="flex items-center">
+                    <input
+                        type="checkbox"
+                        className="mr-2"
+                        checked={youthClinic}
+                        onChange={(e) => setYouthClinic(e.target.checked)}
+                    />
+                    Youth Clinic ({counts.youthClinic})
+                </label>
+                <label className="flex items-center">
+                    <input
+                        type="checkbox"
+                        className="mr-2"
+                        checked={adultClinic}
+                        onChange={(e) => setAdultClinic(e.target.checked)}
+                    />
+                    Adult Clinic ({counts.adultClinic})
+                </label>
+                <label className="flex items-center">
+                    <input
+                        type="checkbox"
+                        className="mr-2"
+                        checked={other}
+                        onChange={(e) => setOther(e.target.checked)}
+                    />
+                    Other ({counts.other})
+                </label>
+            </>
+        );
+    };
 
     const TimeRangeFilter = () => (
         <TimeRangePicker

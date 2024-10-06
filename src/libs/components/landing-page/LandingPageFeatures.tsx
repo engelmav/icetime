@@ -77,6 +77,8 @@ export function LandingPageFeatures() {
     const [isTimeFilterApplied, setIsTimeFilterApplied] = useState(false);
     const [isIceTypeFilterOpen, setIsIceTypeFilterOpen] = useState(false);
     const [isTimeFilterOpen, setIsTimeFilterOpen] = useState(false);
+    const [groupByIceType, setGroupByIceType] = useState(false);
+    const [groupByRink, setGroupByRink] = useState(false);
 
     useEffect(() => {
         async function getUserLocation() {
@@ -299,6 +301,78 @@ export function LandingPageFeatures() {
         />
     );
 
+    const groupedData = useCallback(() => {
+        if (groupByIceType) {
+            return filteredIceData.reduce((acc, item) => {
+                const key = getReadableIceTimeType(item.type);
+                if (!acc[key]) acc[key] = [];
+                acc[key].push(item);
+                return acc;
+            }, {} as Record<string, IceDataItem[]>);
+        } else if (groupByRink) {
+            return filteredIceData.reduce((acc, item) => {
+                const key = item.rink.name;
+                if (!acc[key]) {
+                    acc[key] = {
+                        items: [],
+                        location: item.rink.location,
+                        distance: item.distance,
+                        website: item.rink.website
+                    };
+                }
+                acc[key].items.push(item);
+                return acc;
+            }, {} as Record<string, { items: IceDataItem[], location: string, distance?: number, website?: string | null }>);
+        }
+        return null;
+    }, [filteredIceData, groupByIceType, groupByRink]);
+
+    const renderIceDataTable = (data: IceDataItem[], showIceType: boolean = true, showRink: boolean = true) => (
+        <>
+            <div className={`grid ${showIceType && showRink ? 'grid-cols-4' : 'grid-cols-3'} gap-4 font-bold mb-2 pb-2 border-b`}>
+                {showIceType && <div>Ice Type</div>}
+                <div>Date</div>
+                <div>Time</div>
+                {showRink && <div>Rink</div>}
+            </div>
+            {data.map((item, index) => (
+                <div key={index} className={`grid ${showIceType && showRink ? 'grid-cols-4' : 'grid-cols-3'} gap-4 py-2 border-b`}>
+                    {showIceType && (
+                        <div>
+                            {getReadableIceTimeType(item.type)}
+                            {item.type === IceTimeTypeEnum.OTHER && item.originalIceType && (
+                                <div className="text-xs text-gray-500">{item.originalIceType}</div>
+                            )}
+                        </div>
+                    )}
+                    <div>{item.date}</div>
+                    <div>{`${item.startTime} - ${item.endTime}`}</div>
+                    {showRink && (
+                        <div>
+                            <a href={item.rink.website || '#'} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">
+                                {item.rink.name}
+                            </a>
+                            <div className="text-xs text-gray-500">{item.rink.location}</div>
+                            {item.distance !== undefined && (
+                                <div className="text-xs text-gray-500">{`${item.distance.toFixed(1)} km away`}</div>
+                            )}
+                        </div>
+                    )}
+                </div>
+            ))}
+        </>
+    );
+
+    const handleGrouping = (type: 'ice' | 'rink') => {
+        if (type === 'ice') {
+            setGroupByIceType(!groupByIceType);
+            setGroupByRink(false);
+        } else {
+            setGroupByRink(!groupByRink);
+            setGroupByIceType(false);
+        }
+    };
+
     return (
         <div
             id="landing-features"
@@ -400,6 +474,18 @@ export function LandingPageFeatures() {
                 </div>
                 <div className="w-full sm:col-span-full mb-4 flex justify-center">
                     <Button
+                        className="px-4 py-2 rounded bg-secondary text-secondary-foreground mr-2"
+                        onClick={() => handleGrouping('ice')}
+                    >
+                        {groupByIceType ? 'Ungroup' : 'Group by Ice Type'}
+                    </Button>
+                    <Button
+                        className="px-4 py-2 rounded bg-secondary text-secondary-foreground mr-2"
+                        onClick={() => handleGrouping('rink')}
+                    >
+                        {groupByRink ? 'Ungroup' : 'Group by Rink'}
+                    </Button>
+                    <Button
                         className="px-4 py-2 rounded bg-secondary text-secondary-foreground"
                         onClick={clearFilters}
                     >
@@ -427,35 +513,30 @@ export function LandingPageFeatures() {
             </FilterDialog>
             <div className="col-span-3">
                 {filteredIceData.length > 0 ? (
-                    <>
-                        <div className="grid grid-cols-4 gap-4 font-bold mb-2 pb-2 border-b">
-                            <div>Ice Type</div>
-                            <div>Date</div>
-                            <div>Time</div>
-                            <div>Rink</div>
-                        </div>
-                        {filteredIceData.map((item, index) => (
-                            <div key={index} className="grid grid-cols-4 gap-4 py-2 border-b">
-                                <div>
-                                    {getReadableIceTimeType(item.type)}
-                                    {item.type === IceTimeTypeEnum.OTHER && item.originalIceType && (
-                                        <div className="text-xs text-gray-500">{item.originalIceType}</div>
-                                    )}
-                                </div>
-                                <div>{item.date}</div>
-                                <div>{`${item.startTime} - ${item.endTime}`}</div>
-                                <div>
-                                    <a href={item.rink.website || '#'} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">
-                                        {item.rink.name}
-                                    </a>
-                                    <div className="text-xs text-gray-500">{item.rink.location}</div>
-                                    {item.distance !== undefined && (
-                                        <div className="text-xs text-gray-500">{`${item.distance.toFixed(1)} km away`}</div>
-                                    )}
-                                </div>
+                    groupByIceType || groupByRink ? (
+                        Object.entries(groupedData() || {}).map(([groupName, data]) => (
+                            <div key={groupName} className="mb-8">
+                                {groupByRink ? (
+                                    <div className="mb-4">
+                                        <h3 className="text-xl font-bold">
+                                            <a href={data.website || '#'} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">
+                                                {groupName}
+                                            </a>
+                                        </h3>
+                                        <div className="text-sm text-gray-500">{data.location}</div>
+                                        {data.distance !== undefined && (
+                                            <div className="text-sm text-gray-500">{`${data.distance.toFixed(1)} km away`}</div>
+                                        )}
+                                    </div>
+                                ) : (
+                                    <h3 className="text-xl font-bold mb-4">{groupName}</h3>
+                                )}
+                                {renderIceDataTable(groupByRink ? data.items : data, !groupByIceType, !groupByRink)}
                             </div>
-                        ))}
-                    </>
+                        ))
+                    ) : (
+                        renderIceDataTable(filteredIceData)
+                    )
                 ) : (
                     <div className="text-center p-8 bg-muted rounded-lg w-full">
                         <p className="text-lg text-muted-foreground">

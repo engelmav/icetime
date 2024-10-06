@@ -428,16 +428,14 @@ export function LandingPageFeatures() {
             <div className="col-span-3">
                 {filteredIceData.length > 0 ? (
                     <>
-                        <div className="grid grid-cols-6 gap-4 font-bold mb-2">
+                        <div className="grid grid-cols-4 gap-4 font-bold mb-2 pb-2 border-b">
                             <div>Ice Type</div>
                             <div>Date</div>
                             <div>Time</div>
                             <div>Rink</div>
-                            <div>Location</div>
-                            <div>Distance</div>
                         </div>
                         {filteredIceData.map((item, index) => (
-                            <div key={index} className="grid grid-cols-6 gap-4 py-2 border-b">
+                            <div key={index} className="grid grid-cols-4 gap-4 py-2 border-b">
                                 <div>
                                     {getReadableIceTimeType(item.type)}
                                     {item.type === IceTimeTypeEnum.OTHER && item.originalIceType && (
@@ -450,14 +448,10 @@ export function LandingPageFeatures() {
                                     <a href={item.rink.website || '#'} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">
                                         {item.rink.name}
                                     </a>
-                                </div>
-                                <div>{item.rink.location}</div>
-                                <div>
-                                    {item.distance !== undefined 
-                                        ? `${item.distance.toFixed(1)} km` 
-                                        : item.rink.latitude && item.rink.longitude 
-                                            ? 'Calculating...' 
-                                            : 'N/A'}
+                                    <div className="text-xs text-gray-500">{item.rink.location}</div>
+                                    {item.distance !== undefined && (
+                                        <div className="text-xs text-gray-500">{`${item.distance.toFixed(1)} km away`}</div>
+                                    )}
                                 </div>
                             </div>
                         ))}

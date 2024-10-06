@@ -19,9 +19,7 @@ export default function Page() {
                     <LandingPageFeatures />
                 </div>
                 {/* <LandingPagePricing /> */}
-                <div className="bg-muted py-16">
-                    {/* <LandingPageFAQ /> */}
-                </div>
+
 
                 <LandingPageFooter />
             </div>

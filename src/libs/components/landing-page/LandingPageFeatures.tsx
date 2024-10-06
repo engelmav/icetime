@@ -440,35 +440,25 @@ export function LandingPageFeatures() {
                         >
                             Next month
                         </button>
+                        <Button
+                            variant="outline"
+                            onClick={() => setIsTimeFilterOpen(true)}
+                        >
+                            {getTimeFilterButtonText()}
+                        </Button>
                     </div>
                 </div>
                 <div className="w-full sm:col-span-full mb-4">
                     <div className="flex flex-wrap justify-center gap-4">
                         {isMobile ? (
-                            <>
-                                <Button
-                                    className="w-full sm:w-auto px-4 py-2 rounded bg-primary text-primary-foreground"
-                                    onClick={() => setIsIceTypeFilterOpen(true)}
-                                >
-                                    Filter by Ice Type
-                                </Button>
-                                <Button
-                                    className="w-full sm:w-auto px-4 py-2 rounded bg-primary text-primary-foreground"
-                                    onClick={() => setIsTimeFilterOpen(true)}
-                                >
-                                    {getTimeFilterButtonText()}
-                                </Button>
-                            </>
+                            <Button
+                                className="w-full sm:w-auto px-4 py-2 rounded bg-primary text-primary-foreground"
+                                onClick={() => setIsIceTypeFilterOpen(true)}
+                            >
+                                Filter by Ice Type
+                            </Button>
                         ) : (
-                            <>
-                                <IceTypeFilters />
-                                <Button
-                                    variant="outline"
-                                    onClick={() => setIsTimeFilterOpen(true)}
-                                >
-                                    {getTimeFilterButtonText()}
-                                </Button>
-                            </>
+                            <IceTypeFilters />
                         )}
                     </div>
                 </div>

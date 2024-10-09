@@ -83,6 +83,8 @@ export function LandingPageFeatures() {
     const [groupByRink, setGroupByRink] = useState(false);
     const [selectedLocation, setSelectedLocation] = useState<string | null>(null);
     const [distanceFilter, setDistanceFilter] = useState<number | null>(null);
+    const [iceData, setIceData] = useState<IceDataItem[]>([]);
+    const [calculatedDistances, setCalculatedDistances] = useState<IceDataItem[]>([]);
 
     useEffect(() => {
         async function getUserLocation() {
@@ -111,23 +113,31 @@ export function LandingPageFeatures() {
         return R * c; // Distance in km
     }, []);
 
+    // Use this effect to calculate distances whenever userLocation or iceData changes
     useEffect(() => {
         if (userLocation) {
-            setFilteredIceData(prevData => 
-                prevData.map(item => ({
-                    ...item,
-                    distance: item.rink.latitude && item.rink.longitude
-                        ? calculateDistance(
-                            userLocation.lat,
-                            userLocation.lon,
-                            item.rink.latitude,
-                            item.rink.longitude
-                        )
-                        : undefined
-                }))
-            );
+            console.log('Calculating distances for user location:', userLocation);
+            const newData = iceData.map(item => {
+                if (!item.rink.latitude || !item.rink.longitude) {
+                    console.warn(`Missing coordinates for rink: ${item.rink.name}`);
+                    return item;
+                }
+                const distance = calculateDistance(
+                    userLocation.lat,
+                    userLocation.lon,
+                    item.rink.latitude,
+                    item.rink.longitude
+                );
+                console.log(`Rink: ${item.rink.name}, Latitude: ${item.rink.latitude}, Longitude: ${item.rink.longitude}, Computed Distance: ${distance.toFixed(2)} km`);
+                return { ...item, distance };
+            });
+            setCalculatedDistances(newData);
+            console.log('Updated calculatedDistances:', newData.map(item => ({
+                rink: item.rink.name,
+                distance: item.distance !== undefined ? item.distance.toFixed(2) : 'undefined'
+            })));
         }
-    }, [userLocation, calculateDistance]);
+    }, [userLocation, iceData, calculateDistance]);
 
     useEffect(() => {
         async function fetchIceData() {
@@ -143,6 +153,7 @@ export function LandingPageFeatures() {
                 dateFilter: dateFilter,
                 startTime: startTime,
                 endTime: endTime,
+                distanceFilter: distanceFilter !== null ? distanceFilter.toString() : '',
             });
 
             try {
@@ -151,14 +162,14 @@ export function LandingPageFeatures() {
                     throw new Error('Failed to fetch ice data');
                 }
                 const data: IceDataItem[] = await response.json();
-                setFilteredIceData(data);
+                setIceData(data);
             } catch (error) {
                 console.error('Error fetching ice data:', error);
             }
         }
 
         fetchIceData();
-    }, [openSkate, stickTime, openHockey, substituteRequest, learnToSkate, youthClinic, adultClinic, other, dateFilter, startTime, endTime]);
+    }, [openSkate, stickTime, openHockey, substituteRequest, learnToSkate, youthClinic, adultClinic, other, dateFilter, startTime, endTime, distanceFilter]);
 
     const clearFilters = () => {
         setOpenSkate(false);
@@ -173,6 +184,7 @@ export function LandingPageFeatures() {
         setStartTime('00:00');
         setEndTime('23:59');
         setIsTimeFilterApplied(false);
+        setDistanceFilter(null);
     };
 
     const handleTimeRangeChange = (newStartTime: string, newEndTime: string) => {
@@ -353,16 +365,39 @@ export function LandingPageFeatures() {
         />
     );
 
+    // Modify the filteredByDistance function to use calculatedDistances
+    const filteredByDistance = useCallback(() => {
+        console.log('Filtering by distance. Current filter:', distanceFilter);
+        if (distanceFilter === null) {
+            console.log('No distance filter applied. Returning all data.');
+            return calculatedDistances;
+        }
+        const filtered = calculatedDistances.filter(item => {
+            if (item.distance === undefined) {
+                console.warn(`Distance is undefined for rink: ${item.rink.name}`);
+                return false;
+            }
+            const isIncluded = item.distance <= distanceFilter;
+            console.log(`Rink: ${item.rink.name}, Distance: ${item.distance.toFixed(2)} km, Filter: ${distanceFilter} km, Included: ${isIncluded}`);
+            return isIncluded;
+        });
+        console.log(`Filtered data. Original count: ${calculatedDistances.length}, Filtered count: ${filtered.length}`);
+        return filtered;
+    }, [calculatedDistances, distanceFilter]);
+
+    // Add debugging to the groupedData function
     const groupedData = useCallback(() => {
+        const dataToGroup = filteredByDistance();
+        console.log('Grouping data. Items to group:', dataToGroup.length);
         if (groupByIceType) {
-            return filteredIceData.reduce((acc, item) => {
+            return dataToGroup.reduce((acc, item) => {
                 const key = getReadableIceTimeType(item.type);
                 if (!acc[key]) acc[key] = [];
                 acc[key].push(item);
                 return acc;
             }, {} as Record<string, IceDataItem[]>);
         } else if (groupByRink) {
-            return filteredIceData.reduce((acc, item) => {
+            return dataToGroup.reduce((acc, item) => {
                 const key = item.rink.name;
                 if (!acc[key]) {
                     acc[key] = {
@@ -377,43 +412,47 @@ export function LandingPageFeatures() {
             }, {} as Record<string, { items: IceDataItem[], location: string, distance?: number, website?: string | null }>);
         }
         return null;
-    }, [filteredIceData, groupByIceType, groupByRink]);
+    }, [filteredByDistance, groupByIceType, groupByRink]);
 
-    const renderIceDataTable = (data: IceDataItem[], showIceType: boolean = true, showRink: boolean = true) => (
-        <>
-            <div className={`grid ${showIceType && showRink ? 'grid-cols-4' : 'grid-cols-3'} gap-4 font-bold mb-2 pb-2 border-b`}>
-                {showIceType && <div>Ice Type</div>}
-                <div>Date</div>
-                <div>Time</div>
-                {showRink && <div>Rink</div>}
-            </div>
-            {data.map((item, index) => (
-                <div key={index} className={`grid ${showIceType && showRink ? 'grid-cols-4' : 'grid-cols-3'} gap-4 py-2 border-b`}>
-                    {showIceType && (
-                        <div>
-                            {getReadableIceTimeType(item.type)}
-                            {item.type === IceTimeTypeEnum.OTHER && item.originalIceType && (
-                                <div className="text-xs text-gray-500">{item.originalIceType}</div>
-                            )}
-                        </div>
-                    )}
-                    <div>{item.date}</div>
-                    <div>{`${item.startTime} - ${item.endTime}`}</div>
-                    {showRink && (
-                        <div>
-                            <a href={item.rink.website || '#'} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">
-                                {item.rink.name}
-                            </a>
-                            <div className="text-xs text-gray-500">{item.rink.location}</div>
-                            {item.distance !== undefined && (
-                                <div className="text-xs text-gray-500">{`${item.distance.toFixed(1)} km away`}</div>
-                            )}
-                        </div>
-                    )}
+    // Add debugging to the renderIceDataTable function
+    const renderIceDataTable = (data: IceDataItem[], showIceType: boolean = true, showRink: boolean = true) => {
+        console.log('Rendering ice data table. Data:', data);
+        return (
+            <>
+                <div className={`grid ${showIceType && showRink ? 'grid-cols-4' : 'grid-cols-3'} gap-4 font-bold mb-2 pb-2 border-b`}>
+                    {showIceType && <div>Ice Type</div>}
+                    <div>Date</div>
+                    <div>Time</div>
+                    {showRink && <div>Rink</div>}
                 </div>
-            ))}
-        </>
-    );
+                {data.map((item, index) => (
+                    <div key={index} className={`grid ${showIceType && showRink ? 'grid-cols-4' : 'grid-cols-3'} gap-4 py-2 border-b`}>
+                        {showIceType && (
+                            <div>
+                                {getReadableIceTimeType(item.type)}
+                                {item.type === IceTimeTypeEnum.OTHER && item.originalIceType && (
+                                    <div className="text-xs text-gray-500">{item.originalIceType}</div>
+                                )}
+                            </div>
+                        )}
+                        <div>{item.date}</div>
+                        <div>{`${item.startTime} - ${item.endTime}`}</div>
+                        {showRink && (
+                            <div>
+                                <a href={item.rink.website || '#'} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">
+                                    {item.rink.name}
+                                </a>
+                                <div className="text-xs text-gray-500">{item.rink.location}</div>
+                                {item.distance !== undefined && (
+                                    <div className="text-xs text-gray-500">{`${item.distance.toFixed(1)} km away`}</div>
+                                )}
+                            </div>
+                        )}
+                    </div>
+                ))}
+            </>
+        );
+    };
 
     const handleGrouping = (type: 'ice' | 'rink') => {
         if (type === 'ice') {
@@ -426,6 +465,7 @@ export function LandingPageFeatures() {
     };
 
     const handleLocationChange = (location: { lat: number; lon: number; city: string }) => {
+        console.log('Location changed:', location);
         setUserLocation(location);
         setSelectedLocation(location.city);
         setGuessedLocation(location.city);
@@ -460,55 +500,72 @@ export function LandingPageFeatures() {
             <div className="w-full flex flex-col items-center sm:block">
                 <div className="w-full sm:col-span-full mb-4">
                     <div className="flex flex-wrap justify-center gap-4">
-                        <LocationSelector 
-                            key={selectedLocation || guessedLocation}
-                            onLocationChange={handleLocationChange} 
-                            selectedLocation={selectedLocation || guessedLocation}
-                        />
-                        <button
-                            className={`px-4 py-2 rounded ${
-                                dateFilter === 'today' 
-                                ? 'bg-primary text-primary-foreground' 
-                                : 'bg-secondary text-secondary-foreground'
-                            }`}
-                            onClick={() => setDateFilter('today')}
-                        >
-                            Today
-                        </button>
-                        <button
-                            className={`px-4 py-2 rounded ${
-                                dateFilter === 'tomorrow' 
-                                ? 'bg-primary text-primary-foreground' 
-                                : 'bg-secondary text-secondary-foreground'
-                            }`}
-                            onClick={() => setDateFilter('tomorrow')}
-                        >
-                            Tomorrow
-                        </button>
-                        <button
-                            className={`px-4 py-2 rounded ${dateFilter === 'next7days' ? 'bg-primary text-white' : 'bg-secondary'}`}
-                            onClick={() => setDateFilter('next7days')}
-                        >
-                            Next 7 days
-                        </button>
-                        <button
-                            className={`px-4 py-2 rounded ${dateFilter === 'next14days' ? 'bg-primary text-white' : 'bg-secondary'}`}
-                            onClick={() => setDateFilter('next14days')}
-                        >
-                            Next 14 days
-                        </button>
-                        <button
-                            className={`px-4 py-2 rounded ${dateFilter === 'nextmonth' ? 'bg-primary text-white' : 'bg-secondary'}`}
-                            onClick={() => setDateFilter('nextmonth')}
-                        >
-                            Next month
-                        </button>
-                        <Button
-                            variant="outline"
-                            onClick={() => setIsTimeFilterOpen(true)}
-                        >
-                            {getTimeFilterButtonText()}
-                        </Button>
+                        <div className="flex flex-wrap justify-center gap-4">
+                            <LocationSelector 
+                                key={selectedLocation || guessedLocation}
+                                onLocationChange={handleLocationChange} 
+                                selectedLocation={selectedLocation || guessedLocation}
+                            />
+                            <div className="flex items-center">
+                            <span>within</span>
+                                <Input
+                                    type="number"
+                                    placeholder="km from here"
+                                    className="w-32 mr-2"
+                                    value={distanceFilter !== null ? distanceFilter : ''}
+                                    onChange={(e) => {
+                                        const value = e.target.value === '' ? null : Number(e.target.value);
+                                        console.log('Distance filter changed:', value);
+                                        setDistanceFilter(value);
+                                    }}
+                                />
+                                <span>km</span>
+                            </div>
+                            <button
+                                className={`px-4 py-2 rounded ${
+                                    dateFilter === 'today' 
+                                    ? 'bg-primary text-primary-foreground' 
+                                    : 'bg-secondary text-secondary-foreground'
+                                }`}
+                                onClick={() => setDateFilter('today')}
+                            >
+                                Today
+                            </button>
+                            <button
+                                className={`px-4 py-2 rounded ${
+                                    dateFilter === 'tomorrow' 
+                                    ? 'bg-primary text-primary-foreground' 
+                                    : 'bg-secondary text-secondary-foreground'
+                                }`}
+                                onClick={() => setDateFilter('tomorrow')}
+                            >
+                                Tomorrow
+                            </button>
+                            <button
+                                className={`px-4 py-2 rounded ${dateFilter === 'next7days' ? 'bg-primary text-white' : 'bg-secondary'}`}
+                                onClick={() => setDateFilter('next7days')}
+                            >
+                                Next 7 days
+                            </button>
+                            <button
+                                className={`px-4 py-2 rounded ${dateFilter === 'next14days' ? 'bg-primary text-white' : 'bg-secondary'}`}
+                                onClick={() => setDateFilter('next14days')}
+                            >
+                                Next 14 days
+                            </button>
+                            <button
+                                className={`px-4 py-2 rounded ${dateFilter === 'nextmonth' ? 'bg-primary text-white' : 'bg-secondary'}`}
+                                onClick={() => setDateFilter('nextmonth')}
+                            >
+                                Next month
+                            </button>
+                            <Button
+                                variant="outline"
+                                onClick={() => setIsTimeFilterOpen(true)}
+                            >
+                                {getTimeFilterButtonText()}
+                            </Button>
+                        </div>
                     </div>
                 </div>
                 <div className="w-full sm:col-span-full mb-4">
@@ -565,7 +622,7 @@ export function LandingPageFeatures() {
                 <TimeRangeFilter />
             </FilterDialog>
             <div className="col-span-3">
-                {filteredIceData.length > 0 ? (
+                {filteredByDistance().length > 0 ? (
                     groupByIceType || groupByRink ? (
                         Object.entries(groupedData() || {}).map(([groupName, data]) => (
                             <div key={groupName} className="mb-8">
@@ -588,7 +645,7 @@ export function LandingPageFeatures() {
                             </div>
                         ))
                     ) : (
-                        renderIceDataTable(filteredIceData)
+                        renderIceDataTable(filteredByDistance())
                     )
                 ) : (
                     <div className="text-center p-8 bg-muted rounded-lg w-full">

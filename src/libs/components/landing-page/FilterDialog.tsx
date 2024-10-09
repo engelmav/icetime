@@ -7,7 +7,7 @@ interface DialogProps {
   children: React.ReactNode;
 }
 
-function Dialog({ open, onOpenChange, children }: DialogProps) {
+function CustomDialog({ open, onOpenChange, children }: DialogProps) {
   const dialogRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -56,7 +56,7 @@ interface FilterDialogProps {
 
 export function FilterDialog({ isOpen, onOpenChange, title, description, children, onApply }: FilterDialogProps) {
   return (
-    <Dialog open={isOpen} onOpenChange={onOpenChange}>
+    <CustomDialog open={isOpen} onOpenChange={onOpenChange}>
       <div className="space-y-4">
         <div>
           <h2 className="text-lg font-semibold text-foreground">{title}</h2>
@@ -77,6 +77,9 @@ export function FilterDialog({ isOpen, onOpenChange, title, description, childre
           </Button>
         </div>
       </div>
-    </Dialog>
+    </CustomDialog>
   );
 }
+
+// Export CustomDialog for use in other components
+export { CustomDialog };

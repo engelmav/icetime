@@ -10,6 +10,7 @@ import { Button } from '@/libs/ui/button';
 import { FilterDialog } from './FilterDialog';
 import { IceTimeTypeEnum } from '@prisma/client';
 import { Input } from '@/libs/ui/input';
+import { LocationSelector } from './LocationSelector';
 
 interface IceDataItem {
   type: IceTimeTypeEnum;
@@ -60,7 +61,8 @@ function TimeRangePicker({ startTime, endTime, onTimeRangeChange }: {
 export function LandingPageFeatures() {
     const t = useI18n();
     const [filteredIceData, setFilteredIceData] = useState<IceDataItem[]>([]);
-    const [userLocation, setUserLocation] = useState<{ lat: number; lon: number } | null>(null);
+    const [userLocation, setUserLocation] = useState<{ lat: number; lon: number; city: string } | null>(null);
+    const [guessedLocation, setGuessedLocation] = useState<string | null>(null);
     const [openSkate, setOpenSkate] = useState(false);
     const [stickTime, setStickTime] = useState(false);
     const [openHockey, setOpenHockey] = useState(false);
@@ -79,13 +81,16 @@ export function LandingPageFeatures() {
     const [isTimeFilterOpen, setIsTimeFilterOpen] = useState(false);
     const [groupByIceType, setGroupByIceType] = useState(false);
     const [groupByRink, setGroupByRink] = useState(false);
+    const [selectedLocation, setSelectedLocation] = useState<string | null>(null);
+    const [distanceFilter, setDistanceFilter] = useState<number | null>(null);
 
     useEffect(() => {
         async function getUserLocation() {
             try {
                 const response = await fetch('https://ipapi.co/json/');
                 const data = await response.json();
-                setUserLocation({ lat: data.latitude, lon: data.longitude });
+                setUserLocation({ lat: data.latitude, lon: data.longitude, city: data.city });
+                setGuessedLocation(data.city);
             } catch (error) {
                 console.error('Error fetching user location:', error);
             }
@@ -420,6 +425,12 @@ export function LandingPageFeatures() {
         }
     };
 
+    const handleLocationChange = (location: { lat: number; lon: number; city: string }) => {
+        setUserLocation(location);
+        setSelectedLocation(location.city);
+        setGuessedLocation(location.city);
+    };
+
     return (
         <div
             id="landing-features"
@@ -449,6 +460,11 @@ export function LandingPageFeatures() {
             <div className="w-full flex flex-col items-center sm:block">
                 <div className="w-full sm:col-span-full mb-4">
                     <div className="flex flex-wrap justify-center gap-4">
+                        <LocationSelector 
+                            key={selectedLocation || guessedLocation}
+                            onLocationChange={handleLocationChange} 
+                            selectedLocation={selectedLocation || guessedLocation}
+                        />
                         <button
                             className={`px-4 py-2 rounded ${
                                 dateFilter === 'today' 

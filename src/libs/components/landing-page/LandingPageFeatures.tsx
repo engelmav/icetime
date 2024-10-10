@@ -113,10 +113,8 @@ export function LandingPageFeatures() {
         return R * c; // Distance in km
     }, []);
 
-    // Use this effect to calculate distances whenever userLocation or iceData changes
     useEffect(() => {
         if (userLocation) {
-            console.log('Calculating distances for user location:', userLocation);
             const newData = iceData.map(item => {
                 if (!item.rink.latitude || !item.rink.longitude) {
                     console.warn(`Missing coordinates for rink: ${item.rink.name}`);
@@ -128,14 +126,9 @@ export function LandingPageFeatures() {
                     item.rink.latitude,
                     item.rink.longitude
                 );
-                console.log(`Rink: ${item.rink.name}, Latitude: ${item.rink.latitude}, Longitude: ${item.rink.longitude}, Computed Distance: ${distance.toFixed(2)} km`);
                 return { ...item, distance };
             });
             setCalculatedDistances(newData);
-            console.log('Updated calculatedDistances:', newData.map(item => ({
-                rink: item.rink.name,
-                distance: item.distance !== undefined ? item.distance.toFixed(2) : 'undefined'
-            })));
         }
     }, [userLocation, iceData, calculateDistance]);
 
@@ -365,30 +358,20 @@ export function LandingPageFeatures() {
         />
     );
 
-    // Modify the filteredByDistance function to use calculatedDistances
     const filteredByDistance = useCallback(() => {
-        console.log('Filtering by distance. Current filter:', distanceFilter);
         if (distanceFilter === null) {
-            console.log('No distance filter applied. Returning all data.');
             return calculatedDistances;
         }
-        const filtered = calculatedDistances.filter(item => {
+        return calculatedDistances.filter(item => {
             if (item.distance === undefined) {
-                console.warn(`Distance is undefined for rink: ${item.rink.name}`);
                 return false;
             }
-            const isIncluded = item.distance <= distanceFilter;
-            console.log(`Rink: ${item.rink.name}, Distance: ${item.distance.toFixed(2)} km, Filter: ${distanceFilter} km, Included: ${isIncluded}`);
-            return isIncluded;
+            return item.distance <= distanceFilter;
         });
-        console.log(`Filtered data. Original count: ${calculatedDistances.length}, Filtered count: ${filtered.length}`);
-        return filtered;
     }, [calculatedDistances, distanceFilter]);
 
-    // Add debugging to the groupedData function
     const groupedData = useCallback(() => {
         const dataToGroup = filteredByDistance();
-        console.log('Grouping data. Items to group:', dataToGroup.length);
         if (groupByIceType) {
             return dataToGroup.reduce((acc, item) => {
                 const key = getReadableIceTimeType(item.type);
@@ -414,9 +397,7 @@ export function LandingPageFeatures() {
         return null;
     }, [filteredByDistance, groupByIceType, groupByRink]);
 
-    // Add debugging to the renderIceDataTable function
     const renderIceDataTable = (data: IceDataItem[], showIceType: boolean = true, showRink: boolean = true) => {
-        console.log('Rendering ice data table. Data:', data);
         return (
             <>
                 <div className={`grid ${showIceType && showRink ? 'grid-cols-4' : 'grid-cols-3'} gap-4 font-bold mb-2 pb-2 border-b`}>
@@ -510,12 +491,12 @@ export function LandingPageFeatures() {
                             <span>within</span>
                                 <Input
                                     type="number"
-                                    placeholder="km from here"
-                                    className="w-32 mr-2"
+                                    placeholder="km"
+                                    className="w-16 mx-2 border border-gray-300" // Added border
+                                    min="1" // Prevent inputs less than 1
                                     value={distanceFilter !== null ? distanceFilter : ''}
                                     onChange={(e) => {
-                                        const value = e.target.value === '' ? null : Number(e.target.value);
-                                        console.log('Distance filter changed:', value);
+                                        const value = e.target.value === '' ? null : Math.max(1, Number(e.target.value));
                                         setDistanceFilter(value);
                                     }}
                                 />

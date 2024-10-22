@@ -142,5 +142,6 @@ enum IceTimeTypeEnum {
   LEARN_TO_SKATE      @map("Learn to Skate")
   YOUTH_CLINIC        @map("Youth Clinic")
   ADULT_CLINIC        @map("Adult Clinic")
+  ADULT_SKATE         @map("Adult Skate")
   OTHER               @map("Other")
 }

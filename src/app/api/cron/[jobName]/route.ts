@@ -3,6 +3,7 @@ import { bridgewaterIceArena } from './bridgewaterSA';
 import { nj_unionSportsArena } from './unionSA';
 import { mennenSportsArenaPublicSkate, scrapeStickAndPuck as mennenSportsArenaStickTime } from './mennenSA';
 import { fetchWebTracCalendarHtml, getWebTracCalendarEvents as extractStartEndTimesWithClaude } from './webtracUtil';
+import { nj_westOrangeCodey } from './NJWestOrangeCodey';
 
 export async function POST(req: NextRequest) {
   const url = new URL(req.url)
@@ -26,6 +27,9 @@ export async function POST(req: NextRequest) {
         const events = await fetchWebTracCalendarHtml(today);
         const eventsWIthStartEndTimes = await extractStartEndTimesWithClaude(events);
         return NextResponse.json(eventsWIthStartEndTimes);
+      case 'west-orange-codey-arena':
+        const westOrangeResult = await nj_westOrangeCodey()
+        return NextResponse.json(westOrangeResult)
       default:
         return NextResponse.json({ error: `Job not found: ${jobName}` }, { status: 404 })
     }

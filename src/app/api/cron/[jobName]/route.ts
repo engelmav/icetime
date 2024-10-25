@@ -22,11 +22,11 @@ export async function POST(req: NextRequest) {
       case 'mennen-sports-arena-stick-time':
         const scrapeStickAndPuckResult = await mennenSportsArenaStickTime()
         return NextResponse.json(scrapeStickAndPuckResult)
-      case 'bloomington-ice-garden-minneapolis-mn':
-        const today = new Date();
-        const events = await fetchWebTracCalendarHtml(today);
-        const eventsWIthStartEndTimes = await extractStartEndTimesWithClaude(events);
-        return NextResponse.json(eventsWIthStartEndTimes);
+      // case 'bloomington-ice-garden-minneapolis-mn':
+      //   const today = new Date();
+      //   const events = await fetchWebTracCalendarHtml(today);
+      //   const eventsWIthStartEndTimes = await extractStartEndTimesWithClaude(events);
+      //   return NextResponse.json(eventsWIthStartEndTimes);
       case 'west-orange-codey-arena':
         const westOrangeResult = await nj_westOrangeCodey()
         return NextResponse.json(westOrangeResult)

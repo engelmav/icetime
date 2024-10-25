@@ -18,20 +18,18 @@ export async function getWebTracCalendarEvents(html: string): Promise<CalendarEv
 
   // Regular expression to match calendar day elements
   const calendarDayRegex = /<div class="calendar__day[^>]*>([\s\S]*?)<\/div>\s*<\/div>/g;
-  let match;
-  let calendarDays = [];
+  let match: RegExpExecArray | null;
+  let calendarDays: string[] = [];
 
   console.log('HTML:', html);
 
   while ((match = calendarDayRegex.exec(html)) !== null) {
     calendarDays.push(match[0]);
   }
-  // console.log(`Found ${calendarDays}`);
-  return;
   console.log(`Found ${calendarDays.length} calendar days`);
 
   // Divide calendar days into buckets of 7
-  const buckets = [];
+  const buckets: string[][] = [];
   for (let i = 0; i < calendarDays.length; i += 7) {
     buckets.push(calendarDays.slice(i, i + 7));
   }
@@ -93,7 +91,7 @@ async function processCalendarDaysWithClaude(calendarDays: string[]): Promise<Ca
               ],
               ...
             ]
-          }
+          ]
 
           Use 24h time. Don't use any carriage returns/newlines.
           You may only see a date, and no event information. In that case, skip creation of the array.
@@ -108,19 +106,27 @@ async function processCalendarDaysWithClaude(calendarDays: string[]): Promise<Ca
   console.log('Original HTML:', JSON.stringify(calendarDays));
   
   try {
-    const parsedData = JSON.parse(scheduleText);
-    const activities = new Map(parsedData.activities.map(activity => {
+    const parsedData = JSON.parse(scheduleText) as {
+      activities: Record<string, number>[];
+      events: [string, ...(number | string)[]][];
+    };
+    const activities = new Map(parsedData.activities.map((activity: Record<string, number>) => {
       const [name, id] = Object.entries(activity)[0];
       return [id, name];
     }));
 
     const rawEvents: CalendarEvent[] = parsedData.events.flatMap(([date, ...eventData]) => 
-      eventData.map(([activityId, startTime, endTime]) => ({
-        date,
-        title: activities.get(activityId) || 'Unknown Activity',
-        startTime,
-        endTime
-      }))
+      eventData.map((event) => {
+        if (Array.isArray(event) && event.length === 3) {
+          const [activityId, startTime, endTime] = event;
+          return {
+            date,
+            title: activities.get(activityId as number) || 'Unknown Activity',
+            timeRange: `${startTime as string} - ${endTime as string}`
+          };
+        }
+        return null;
+      }).filter((event): event is CalendarEvent => event !== null)
     );
 
     return rawEvents;
@@ -135,7 +141,7 @@ export async function fetchWebTracCalendarHtml(date: Date): Promise<CalendarEven
   const url = `https://webtrac.bloomingtonmn.gov/wbwsc/webtrac.wsc/search.html?display=Calendar&module=Event&_csrf_token=Wj14720U091A2I4B3A292Z3H5D4I5V6B725U4K6M4Z04024T5D470C614K6F5M1C6R506J511A5U4O5A5264023T524T1V5J4J5M501D6X4R5F561F4O4T5L4Z6Z665S6G`;
 
   try {
-    const response = await axios.get(url, {
+    const response = await axios.get<string>(url, {
       headers: {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
         'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
@@ -178,9 +184,9 @@ export async function fetchWebTracCalendarHtml(date: Date): Promise<CalendarEven
     });
     console.log('Calendar events:', calendarEvents);
     return calendarEvents;
-  } catch (error) {
+  } catch (error: unknown) {
     console.error('Error fetching WebTrac calendar HTML:', error);
-    if (error.response) {
+    if (axios.isAxiosError(error) && error.response) {
       console.error('Response status:', error.response.status);
       console.error('Response headers:', error.response.headers);
       console.error('Response data:', error.response.data);

@@ -1,6 +1,13 @@
 const puppeteer = require('puppeteer');
 import cheerio from 'cheerio';
 
+interface Event {
+    eventType: string;
+    eventDate: string;
+    startTime: string;
+    endTime: string;
+}
+
 async function scrapeArenaCalendar(arenaUrl: string) {
     const browser = await puppeteer.launch({ headless: 'new' });
     const page = await browser.newPage();
@@ -12,11 +19,11 @@ async function scrapeArenaCalendar(arenaUrl: string) {
         await page.waitForSelector('#content_dropintype_Skating', { timeout: 15000 });
 
         // Get the HTML content
-        const content = await page.$eval('#content_dropintype_Skating', el => el.outerHTML);
+        const content = await page.$eval('#content_dropintype_Skating', (el: Element) => el.outerHTML);
 
         // Parse the HTML content
         const $ = cheerio.load(content);
-        const events = [];
+        const events: Event[] = [];
 
         // Iterate through all tables with id starting with 'dropin_Skating_'
         $('tr[id^="dropin_Skating_"]').each((_, element) => {

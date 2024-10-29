@@ -9,7 +9,11 @@
         "lint": "npm run prisma-generate && next lint",
         "prisma-generate": "npx prisma generate",
         "prisma-studio": "npx prisma studio",
-        "prisma-migrate": "npx prisma migrate dev"
+        "prisma-migrate": "npx prisma migrate dev",
+        "docker:up": "docker-compose up -d",
+        "docker:down": "docker-compose down",
+        "docker:dev": "cp .env.local.docker .env.local && dotenv -e .env.local -- npm run prisma-migrate && dotenv -e .env.local -- npm run dev",
+        "docker:clean": "docker-compose down -v"
     },
     "prisma": {
         "schema": "src/libs/database/schema.prisma"

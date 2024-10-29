@@ -5,9 +5,18 @@ import { mennenSportsArenaPublicSkate, scrapeStickAndPuck as mennenSportsArenaSt
 import { fetchWebTracCalendarHtml, getWebTracCalendarEvents as extractStartEndTimesWithClaude } from './webtracUtil';
 import { nj_westOrangeCodey } from './NJWestOrangeCodey';
 
-export async function POST(req: NextRequest) {
+export async function GET(req: NextRequest, { params }: { params: { jobName?: string[] } }) {
   const url = new URL(req.url)
-  const jobName = url.pathname.split('/').pop()
+  let jobName = url.searchParams.get('jobName')
+
+  if (!jobName && params.jobName && params.jobName.length > 0) {
+    jobName = params.jobName[0]
+  }
+
+  if (!jobName) {
+    return NextResponse.json({ error: 'Missing jobName parameter' }, { status: 400 })
+  }
+
   try {
     switch (jobName) {
       case 'union-sports-arena-nj':

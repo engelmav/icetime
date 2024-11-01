@@ -6,21 +6,21 @@ const prisma = new PrismaClient()
 async function seedRinks() {
   const rinks = [
     {
-      name: "Mennen Sports Arena",
+      name: "[s] Mennen Sports Arena",
       website: "https://www.morrisparks.net/index.php/parks/mennen-sports-arena/",
       location: "161 East Hanover Avenue, Morristown, NJ 07960",
       latitude: 40.8291,
       longitude: -74.4544,
     },
     {
-      name: "Union Sports Arena",
+      name: "[s] Union Sports Arena",
       website: "https://unionsportsarena.com",
       location: "2441 US-22, Union, NJ 07083",
       latitude: 40.6967,
       longitude: -74.2903,
     },
     {
-      name: "Codey Arena",
+      name: "[s] Codey Arena",
       website: "https://essexcountyparks.org/facilities/codey-arena",
       location: "560 Northfield Ave, West Orange, NJ 07052",
       latitude: 40.7684,
@@ -53,9 +53,9 @@ function getRandomTime(startHour: number = 6, endHour: number = 23) {
 }
 
 async function seedIceTimes(rinks: any[]) {
-  const mennen = rinks.find(r => r.name === "Mennen Sports Arena")
-  const union = rinks.find(r => r.name === "Union Sports Arena")
-  const codey = rinks.find(r => r.name === "Codey Arena")
+  const mennen = rinks.find(r => r.name === "[s] Mennen Sports Arena")
+  const union = rinks.find(r => r.name === "[s] Union Sports Arena")
+  const codey = rinks.find(r => r.name === "[s] Codey Arena")
 
   const now = new Date()
   const today = startOfDay(now)

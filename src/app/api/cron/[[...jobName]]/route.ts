@@ -4,6 +4,9 @@ import { nj_unionSportsArena } from './unionSA';
 import { mennenSportsArenaPublicSkate, scrapeStickAndPuck as mennenSportsArenaStickTime } from './mennenSA';
 import { fetchWebTracCalendarHtml, getWebTracCalendarEvents as extractStartEndTimesWithClaude } from './webtracUtil';
 import { nj_westOrangeCodey } from './NJWestOrangeCodey';
+import { PrismaClient } from 'prisma';
+
+const prisma = new PrismaClient();
 
 export async function GET(req: NextRequest, { params }: { params: { jobName?: string[] } }) {
   const url = new URL(req.url)
@@ -14,40 +17,59 @@ export async function GET(req: NextRequest, { params }: { params: { jobName?: st
   }
 
   if (!jobName) {
+    await prisma.rinkUpdateLog.create({
+      data: {
+        jobName: 'unknown',
+        success: false,
+        error: 'Missing jobName parameter'
+      }
+    })
     return NextResponse.json({ error: 'Missing jobName parameter' }, { status: 400 })
   }
 
   try {
-    switch (jobName) {
-      case 'union-sports-arena-nj':
-        const result = await nj_unionSportsArena()
-        return NextResponse.json(result)
-      case 'bridgewater-ice-arena':
-        const bridgewaterResult = await bridgewaterIceArena()
-        return NextResponse.json(bridgewaterResult)
-      case 'mennen-sports-arena-public-skate':
-        const mennenResult = await mennenSportsArenaPublicSkate()
-        return NextResponse.json(mennenResult)
-      case 'mennen-sports-arena-stick-time':
-        const scrapeStickAndPuckResult = await mennenSportsArenaStickTime()
-        return NextResponse.json(scrapeStickAndPuckResult)
-      // case 'bloomington-ice-garden-minneapolis-mn':
-      //   const today = new Date();
-      //   const events = await fetchWebTracCalendarHtml(today);
-      //   const eventsWIthStartEndTimes = await extractStartEndTimesWithClaude(events);
-      //   return NextResponse.json(eventsWIthStartEndTimes);
-      case 'west-orange-codey-arena':
-        const westOrangeResult = await nj_westOrangeCodey()
-        return NextResponse.json(westOrangeResult)
-      default:
-        return NextResponse.json({ error: `Job not found: ${jobName}` }, { status: 404 })
-    }
+    const result = await executeJob(jobName)
+    
+    // Log successful update
+    await prisma.rinkUpdateLog.create({
+      data: {
+        jobName,
+        success: true
+      }
+    })
+    
+    return NextResponse.json(result)
   } catch (error) {
+    // Log failed update
+    await prisma.rinkUpdateLog.create({
+      data: {
+        jobName: jobName,
+        success: false,
+        error: error instanceof Error ? error.message : 'An unknown error occurred'
+      }
+    })
     console.error('Error executing cron job:', error);
     if (error instanceof Error) {
       return NextResponse.json({ error: 'Internal server error', details: error.message }, { status: 500 })
     } else {
       return NextResponse.json({ error: 'Internal server error', details: 'An unknown error occurred' }, { status: 500 })
     }
+  }
+}
+
+async function executeJob(jobName: string) {
+  switch (jobName) {
+    case 'union-sports-arena-nj':
+      return await nj_unionSportsArena()
+    case 'bridgewater-ice-arena':
+      return await bridgewaterIceArena()
+    case 'mennen-sports-arena-public-skate':
+      return await mennenSportsArenaPublicSkate()
+    case 'mennen-sports-arena-stick-time':
+      return await mennenSportsArenaStickTime()
+    case 'west-orange-codey-arena':
+      return await nj_westOrangeCodey()
+    default:
+      throw new Error(`Job not found: ${jobName}`)
   }
 }

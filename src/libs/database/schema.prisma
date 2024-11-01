@@ -127,7 +127,7 @@ model Rink {
   updatedAt DateTime  @updatedAt
   name      String    @unique
   website   String?
-  location  String
+  location  String?
   latitude  Float?
   longitude Float?
   iceTimes  IceTime[]
@@ -144,4 +144,13 @@ enum IceTimeTypeEnum {
   ADULT_CLINIC        @map("Adult Clinic")
   ADULT_SKATE         @map("Adult Skate")
   OTHER               @map("Other")
+}
+
+// Rink Update Log
+model RinkUpdateLog {
+  id        String    @id @default(cuid())
+  createdAt DateTime  @default(now())
+  jobName   String
+  success   Boolean
+  error     String?
 }

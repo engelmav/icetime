@@ -27,8 +27,14 @@ export async function nj_unionSportsArena() {
   };
 
   // Find the rink
-  const rink = await prisma.rink.findUnique({
+  const rink = await prisma.rink.upsert({
     where: { name: "Union Sports Arena" },
+    update: {},
+    create: {
+      name: "Union Sports Arena",
+      location: "2441 US-22, Union, NJ 07083",
+      website: "https://unionsportsarena.com",
+    },
   });
 
   if (!rink) {

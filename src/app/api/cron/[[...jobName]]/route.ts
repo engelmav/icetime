@@ -4,10 +4,7 @@ import { nj_unionSportsArena } from './unionSA';
 import { mennenSportsArenaPublicSkate, scrapeStickAndPuck as mennenSportsArenaStickTime } from './mennenSA';
 import { fetchWebTracCalendarHtml, getWebTracCalendarEvents as extractStartEndTimesWithClaude } from './webtracUtil';
 import { nj_westOrangeCodey } from './NJWestOrangeCodey';
-import { PrismaClient } from 'prisma';
-
-const prisma = new PrismaClient();
-
+import { prisma } from '@/libs/database';
 export async function GET(req: NextRequest, { params }: { params: { jobName?: string[] } }) {
   const url = new URL(req.url)
   let jobName = url.searchParams.get('jobName')

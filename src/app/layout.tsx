@@ -57,7 +57,7 @@ export default async function RootLayout({
         >
             <TooltipProviderComponent>
                 <ClerkProvider>
-                    <body className="w-screen min-h-screen flex bg-background text-foreground">
+                    <body className="min-h-screen flex bg-background text-foreground">
                         <ThemeProvider
                             attribute="class"
                             defaultTheme="system"

@@ -4,6 +4,7 @@ import { CustomDialog } from './FilterDialog';
 import { Input } from '@/libs/ui/input';
 import { useLoadScript, Autocomplete } from '@react-google-maps/api';
 
+
 // Define libraries array outside of the component
 const libraries: ("places")[] = ["places"];
 
@@ -47,7 +48,7 @@ export function LocationSelector({ onLocationChange, selectedLocation }: Locatio
       <Button variant="outline" onClick={() => setIsOpen(true)}>
         {selectedLocation ? `Location: ${selectedLocation}` : 'Set Location'}
       </Button>
-      <CustomDialog open={isOpen} onOpenChange={setIsOpen}>
+      <CustomDialog open={isOpen} onOpenChange={setIsOpen} showApplyButton={false}>
         <div className="space-y-4">
           <div>
             <h2 className="text-lg font-semibold text-foreground">Set Your Location</h2>
@@ -73,14 +74,6 @@ export function LocationSelector({ onLocationChange, selectedLocation }: Locatio
             ) : (
               <div>Loading...</div>
             )}
-          </div>
-          <div>
-            <Button
-              className="w-full"
-              onClick={() => setIsOpen(false)}
-            >
-              Close
-            </Button>
           </div>
         </div>
       </CustomDialog>

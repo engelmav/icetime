@@ -5,6 +5,7 @@ interface DialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   children: React.ReactNode;
+  showApplyButton?: boolean;
 }
 
 function CustomDialog({ open, onOpenChange, children }: DialogProps) {
@@ -17,20 +18,38 @@ function CustomDialog({ open, onOpenChange, children }: DialogProps) {
       }
     };
 
-    const handleClickOutside = (event: MouseEvent) => {
-      if (dialogRef.current && !dialogRef.current.contains(event.target as Node)) {
+    const handleOutsideInteraction = (event: PointerEvent) => {
+      const target = event.target as HTMLElement;
+      
+      // Check if the click is on any Google Places autocomplete element
+      const isPacElement = target.closest('.pac-container') || 
+                          target.classList.contains('pac-item') ||
+                          target.classList.contains('pac-item-query');
+                          
+      if (isPacElement) {
+        console.log('Pointer was on Places autocomplete element');
+        event.stopImmediatePropagation();
+        return;
+      }
+
+      if (dialogRef.current && !dialogRef.current.contains(target)) {
         onOpenChange(false);
       }
     };
 
     if (open) {
       document.addEventListener('keydown', handleKeyDown);
-      document.addEventListener('mousedown', handleClickOutside);
+      document.addEventListener('pointerdown', handleOutsideInteraction, { 
+        capture: true, 
+        passive: false 
+      });
     }
 
     return () => {
       document.removeEventListener('keydown', handleKeyDown);
-      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('pointerdown', handleOutsideInteraction, { 
+        capture: true 
+      });
     };
   }, [open, onOpenChange]);
 
@@ -51,10 +70,19 @@ interface FilterDialogProps {
   title: string;
   description: string;
   children: React.ReactNode;
-  onApply: () => void;
+  onApply?: () => void;
+  showApplyButton?: boolean;
 }
 
-export function FilterDialog({ isOpen, onOpenChange, title, description, children, onApply }: FilterDialogProps) {
+export function FilterDialog({ 
+  isOpen, 
+  onOpenChange, 
+  title, 
+  description, 
+  children, 
+  onApply, 
+  showApplyButton = true 
+}: FilterDialogProps) {
   return (
     <CustomDialog open={isOpen} onOpenChange={onOpenChange}>
       <div className="space-y-4">
@@ -65,17 +93,19 @@ export function FilterDialog({ isOpen, onOpenChange, title, description, childre
         <div className="max-h-60 overflow-y-auto">
           {children}
         </div>
-        <div>
-          <Button
-            className="w-full"
-            onClick={() => {
-              onApply();
-              onOpenChange(false);
-            }}
-          >
-            Apply
-          </Button>
-        </div>
+        {showApplyButton && onApply && (
+          <div>
+            <Button
+              className="w-full"
+              onClick={() => {
+                onApply();
+                onOpenChange(false);
+              }}
+            >
+              Apply
+            </Button>
+          </div>
+        )}
       </div>
     </CustomDialog>
   );

@@ -1,7 +1,6 @@
 'use client';
 
 import { useI18n } from '@/libs/locales/client';
-import { Badge } from '@/libs/ui/badge';
 import { Card, CardDescription, CardHeader, CardTitle } from '@/libs/ui/card';
 import { useState, useEffect, useCallback } from 'react';
 import { getReadableIceTimeType } from '@/libs/utils';
@@ -58,7 +57,7 @@ function TimeRangePicker({ startTime, endTime, onTimeRangeChange }: {
     );
 }
 
-export function LandingPageFeatures() {
+export function IceTimeSearch() {
     const t = useI18n();
     const [filteredIceData, setFilteredIceData] = useState<IceDataItem[]>([]);
     const [userLocation, setUserLocation] = useState<{ lat: number; lon: number; city: string } | null>(null);
@@ -82,7 +81,7 @@ export function LandingPageFeatures() {
     const [groupByIceType, setGroupByIceType] = useState(false);
     const [groupByRink, setGroupByRink] = useState(false);
     const [selectedLocation, setSelectedLocation] = useState<string | null>(null);
-    const [distanceFilter, setDistanceFilter] = useState<number | null>(null);
+    const [distanceFilter, setDistanceFilter] = useState<number>(20);
     const [iceData, setIceData] = useState<IceDataItem[]>([]);
     const [calculatedDistances, setCalculatedDistances] = useState<IceDataItem[]>([]);
 
@@ -492,11 +491,11 @@ export function LandingPageFeatures() {
                                 <Input
                                     type="number"
                                     placeholder="km"
-                                    className="w-16 mx-2 border border-gray-300" // Added border
-                                    min="1" // Prevent inputs less than 1
-                                    value={distanceFilter !== null ? distanceFilter : ''}
+                                    className="w-16 mx-2 border border-gray-300"
+                                    min="1"
+                                    value={distanceFilter}
                                     onChange={(e) => {
-                                        const value = e.target.value === '' ? null : Math.max(1, Number(e.target.value));
+                                        const value = e.target.value === '' ? 20 : Math.max(1, Number(e.target.value));
                                         setDistanceFilter(value);
                                     }}
                                 />

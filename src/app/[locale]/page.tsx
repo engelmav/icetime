@@ -1,5 +1,5 @@
 import {
-    LandingPageFeatures,
+    IceTimeSearch,
     LandingPageFooter,
     LandingPageHeader,
 } from '@/libs/components/landing-page';
@@ -16,7 +16,7 @@ export default function Page() {
                 
                 <div className="bg-muted py-16">
                 
-                    <LandingPageFeatures />
+                    <IceTimeSearch />
                 </div>
                 {/* <LandingPagePricing /> */}
 

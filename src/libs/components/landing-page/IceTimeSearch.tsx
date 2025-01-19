@@ -210,7 +210,7 @@ export function IceTimeSearch() {
             other: 0
         };
 
-        filteredIceData.forEach(item => {
+        calculatedDistances.forEach(item => {
             switch (item.type) {
                 case IceTimeTypeEnum.OPEN_SKATE:
                     counts.openSkate++;
@@ -240,7 +240,7 @@ export function IceTimeSearch() {
         });
 
         return counts;
-    }, [filteredIceData]);
+    }, [calculatedDistances]);
 
     const content = [
         {
@@ -462,21 +462,12 @@ export function IceTimeSearch() {
                     alt="Image"
                     className="w-full scale-y-75 max-w-none absolute top-full left-0"
                 />
-                IceTime Features
+                IceTime
             </h1>
             <p className="text-xl text-muted-foreground max-w-2xl">
                 IceTime: Your quick way to get on the ice as much as possible. Discover available ice times, book sessions, and never miss a chance to skate.
             </p>
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-8">
-                {content.map((item, index) => (
-                    <Card key={index}>
-                        <CardHeader>
-                            <CardTitle>{item.title}</CardTitle>
-                            <CardDescription>{item.description}</CardDescription>
-                        </CardHeader>
-                    </Card>
-                ))}
-            </div>
+
             <div className="w-full flex flex-col items-center sm:block">
                 <div className="w-full sm:col-span-full mb-4">
                     <div className="flex flex-wrap justify-center gap-4">
